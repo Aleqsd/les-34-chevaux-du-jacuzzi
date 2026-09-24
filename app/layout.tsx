@@ -3,6 +3,7 @@ import "./globals.css";
 import "./experience.css";
 import "./legendary.css";
 import "./immersive.css";
+import "./cookie-fullscreen.css";
 
 export const metadata: Metadata = {
   title: "Les 34 Chevaux du Jacuzzi — Le QG",

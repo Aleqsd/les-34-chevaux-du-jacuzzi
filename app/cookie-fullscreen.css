@@ -1,0 +1,98 @@
+/* The same mounted game becomes a viewport-sized workspace. */
+.cookie-header,.cookie-play-panel,.cookie-command-panel{display:contents}
+.cookie-hud-metrics,.cookie-command-heading{display:none}
+body.cookie-fullscreen{overflow:hidden;background:#12141d}
+body.cookie-fullscreen .app-shell{height:100dvh;min-height:0}
+body.cookie-fullscreen .app-shell>main{width:100%;max-width:none;height:100%;min-height:0;padding:0 clamp(14px,1.8vw,32px)}
+body.cookie-fullscreen .app-shell>main>.view-panel{height:100%;min-height:0}
+body.cookie-fullscreen .cookie-game{height:100dvh;min-height:0;margin:0;display:flex;flex-direction:column;background:radial-gradient(ellipse at 12% 65%,#8f571115,transparent 42%)}
+body.cookie-fullscreen .cookie-header{display:grid;grid-template-columns:minmax(185px,.85fr) minmax(330px,1fr) auto;align-items:center;gap:22px;flex-shrink:0;padding:14px 0;border-bottom:1px solid #ffc67524}
+body.cookie-fullscreen .cookie-heading{grid-column:1;grid-row:1;display:block;padding:0;min-width:0}
+body.cookie-fullscreen .cookie-heading h1{font-size:32px;line-height:1;margin:0;letter-spacing:.01em;white-space:nowrap}
+body.cookie-fullscreen .cookie-heading .eyebrow,body.cookie-fullscreen .cookie-heading p{display:none}
+body.cookie-fullscreen .cookie-save{margin-top:9px;gap:6px;font-size:12px;max-width:none;line-height:1.4}
+body.cookie-fullscreen .cookie-save>svg{width:14px;height:14px}
+body.cookie-fullscreen .cookie-save small{padding:0;max-width:100%;width:auto;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+body.cookie-fullscreen .cookie-controls{grid-column:3;grid-row:1;position:relative;top:auto;z-index:25;padding:0;border:0;background:none;backdrop-filter:none;gap:7px;justify-content:flex-end;max-width:470px}
+body.cookie-fullscreen .cookie-controls .button{min-height:40px;padding:9px 12px;font-size:13px}
+body.cookie-fullscreen .cookie-control-buttons{gap:7px;flex-wrap:nowrap}
+body.cookie-fullscreen .cookie-hud-metrics{grid-column:2;grid-row:1;display:grid;grid-template-columns:1.4fr 1fr 1fr;border:1px solid #f7c27724;border-radius:14px;background:#f7c27705;padding:12px 4px}
+.cookie-hud-metrics>div{display:flex;align-items:center;justify-content:center;gap:10px;min-width:0;padding:0 12px;border-right:1px solid #f7c2771c}
+.cookie-hud-metrics>div:last-child{border:0}.cookie-hud-metrics svg{color:#ac875d}.cookie-hud-metrics span{min-width:0}.cookie-hud-metrics small{display:block;font-size:12px;color:#b7a792;white-space:nowrap}.cookie-hud-metrics strong{display:block;font-size:20px;line-height:1.3;color:#ffe0a3;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+body.cookie-fullscreen .cookie-tabs{flex:1;min-height:0;gap:12px;padding:12px 0 18px}
+body.cookie-fullscreen .cookie-nav{flex-shrink:0;flex-wrap:nowrap;gap:4px!important;padding:4px!important;background:#181c29!important;border-color:#f8c67e1f}
+body.cookie-fullscreen .cookie-nav [role=tab]{min-height:42px;padding:10px 14px;font-size:14px}
+body.cookie-fullscreen .cookie-tabs>[role=tabpanel]{flex:1;min-height:0;overflow:auto;scrollbar-gutter:stable;scrollbar-width:thin;scrollbar-color:#7b623c #ffffff05;overscroll-behavior:contain;padding:0 2px 8px}
+body.cookie-fullscreen .cookie-tabs>[role=tabpanel][data-state=inactive]{display:none}
+body.cookie-fullscreen .cookie-tabs>[role=tabpanel]:has(>.cookie-workshop){overflow:hidden;padding:0;scrollbar-gutter:auto}
+body.cookie-fullscreen .cookie-workshop{height:100%;min-height:0;grid-template-columns:minmax(280px,.95fr) minmax(255px,.75fr) minmax(360px,1.3fr);gap:16px;align-items:stretch}
+body.cookie-fullscreen .cookie-machine{display:contents}
+body.cookie-fullscreen .cookie-play-panel{min-height:0;display:flex;flex-direction:column;align-items:stretch;padding:clamp(18px,2.5vh,28px);border:1px solid #ffd09842;border-radius:24px;position:relative;isolation:isolate;overflow:hidden;background:radial-gradient(ellipse at 50% 50%,#d6933e28,transparent 66%),linear-gradient(160deg,#302328bb,#141c2b);box-shadow:inset 0 1px 0 #ffddb515}
+body.cookie-fullscreen .cookie-bank>span{font-size:12px;color:#c2a582}
+body.cookie-fullscreen .cookie-bank>strong{font-size:clamp(40px,4vw,68px);line-height:1.15;margin:8px 0}
+body.cookie-fullscreen .cookie-bank>small{font-size:14px;color:#cdb08c}
+body.cookie-fullscreen .cookie-click-stage{flex:1;min-height:160px;margin:12px 0}
+body.cookie-fullscreen .giant-cookie{width:clamp(180px,29dvh,350px);height:auto;aspect-ratio:1;max-width:90%}
+body.cookie-fullscreen .cookie-halo{inset:9%;aspect-ratio:1;margin:auto;max-height:95%;max-width:95%}
+body.cookie-fullscreen .cookie-tap-hint{font-size:14px;margin:0;color:#bd9d7b}
+body.cookie-fullscreen .cookie-active-hint{font-size:13px;line-height:1.6;padding:12px;margin-top:16px;text-align:center;flex-shrink:0}
+body.cookie-fullscreen .cookie-command-panel{display:flex;flex-direction:column;min-height:0;gap:14px;overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:#7b623c transparent;background:#181c29;border:1px solid #e2bb7b24;border-radius:22px;padding:18px}
+body.cookie-fullscreen .cookie-command-heading{display:flex;align-items:center;gap:8px;color:#e6d6bb;font-size:14px}
+body.cookie-fullscreen .golden-cookie{padding:13px;flex-shrink:0;gap:9px}
+body.cookie-fullscreen .golden-cookie strong{font-size:14px}
+body.cookie-fullscreen .golden-cookie small{font-size:12px}
+body.cookie-fullscreen .cookie-autoclick{margin:0;padding:13px;flex-shrink:0}
+body.cookie-fullscreen .cookie-autoclick>p{font-size:12px;line-height:1.55}
+body.cookie-fullscreen .auto-heading{gap:8px;flex-wrap:wrap}.cookie-fullscreen .auto-bot{width:32px;height:36px}
+body.cookie-fullscreen .auto-heading strong{font-size:14px}
+body.cookie-fullscreen .auto-heading small,body.cookie-fullscreen .auto-note{font-size:12px}
+body.cookie-fullscreen .auto-heading button{min-height:38px;min-width:44px}
+body.cookie-fullscreen .auto-tiers{grid-template-columns:repeat(2,1fr);gap:6px}
+body.cookie-fullscreen .auto-tiers>span{padding:7px 4px;gap:5px}
+body.cookie-fullscreen .auto-tiers b{font-size:14px}
+body.cookie-fullscreen .auto-tiers small{font-size:12px;width:auto}
+body.cookie-fullscreen .cookie-mini-stats{margin:0;padding:14px 0 0;gap:8px;flex-shrink:0}
+body.cookie-fullscreen .cookie-mini-stats>span{font-size:12px}
+body.cookie-fullscreen .cookie-mini-stats b{font-size:18px}
+body.cookie-fullscreen .cookie-command-panel>.cookie-rules{font-size:12px;line-height:1.6;margin:0;color:#a39aa7}
+body.cookie-fullscreen .cookie-production{display:flex;flex-direction:column;min-width:0;min-height:0;border:1px solid #e2bb7b24;border-radius:22px;background:#151c29;overflow:hidden}
+body.cookie-fullscreen .cookie-shop-heading{padding:18px;gap:12px;flex-shrink:0;border-bottom:1px solid #e2bb7b1a;flex-wrap:wrap}
+body.cookie-fullscreen .cookie-shop-heading h2{font-size:23px;margin-top:5px}
+body.cookie-fullscreen .cookie-shop-heading .eyebrow{font-size:12px}
+body.cookie-fullscreen .cookie-bulk button{font-size:13px;min-width:42px;min-height:38px}
+body.cookie-fullscreen .cookie-building-list{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;scrollbar-gutter:stable;scrollbar-width:thin;scrollbar-color:#7b623c transparent;padding:12px;gap:8px}
+body.cookie-fullscreen .cookie-building{padding:13px;gap:12px;border-radius:14px;flex-shrink:0}
+body.cookie-fullscreen .cookie-building:hover{transform:none}
+body.cookie-fullscreen .building-copy strong{font-size:15px;line-height:1.3}
+body.cookie-fullscreen .building-copy small{font-size:12px}
+body.cookie-fullscreen .building-copy>span{font-size:13px;color:#e4bc85}
+body.cookie-fullscreen .building-count{font-size:25px}
+body.cookie-fullscreen .building-count small{font-size:12px}
+body.cookie-fullscreen .cookie-building .building-icon{width:45px}
+body.cookie-fullscreen .cookie-building .cookie-item-icon{width:43px;height:43px}
+body.cookie-fullscreen .cookie-building .cookie-item-icon>svg{width:25px;height:25px}
+body.cookie-fullscreen .cookie-tabs .cookie-upgrades{margin:0;padding:12px 0 0}
+body.cookie-fullscreen .cookie-section-intro{padding:12px 0 20px}
+body.cookie-fullscreen .cookie-section-intro h2{font-size:30px;margin:10px 0}
+body.cookie-fullscreen .cookie-section-intro p{margin-bottom:0;font-size:14px}
+body.cookie-fullscreen .cookie-upgrade-grid{grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
+body.cookie-fullscreen .cookie-achievements{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+body.cookie-fullscreen .cookie-identify,body.cookie-fullscreen .cookie-offline,body.cookie-fullscreen .cookie-tabs>.error-banner{flex-shrink:0;margin:0;padding:12px 16px;font-size:14px}
+body.cookie-fullscreen .cookie-unlock-toaster{top:auto!important;bottom:24px!important;right:24px!important}
+@media(min-width:1800px){body.cookie-fullscreen .cookie-workshop{grid-template-columns:minmax(420px,1fr) minmax(285px,.55fr) minmax(480px,1.25fr)}body.cookie-fullscreen .cookie-building-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-content:start}.cookie-fullscreen .cookie-building{min-height:115px}}
+@media(max-height:790px) and (min-width:1151px){body.cookie-fullscreen .cookie-header{padding:9px 0}.cookie-fullscreen .cookie-command-panel{gap:10px;padding:14px}.cookie-fullscreen .auto-note,.cookie-fullscreen .cookie-command-panel>.cookie-rules{display:none}.cookie-fullscreen .auto-tiers{grid-template-columns:repeat(4,1fr)}.cookie-fullscreen .auto-tiers small{width:100%}.cookie-fullscreen .cookie-autoclick>p{margin:9px 0}.cookie-fullscreen .cookie-shop-heading{padding:14px 16px}}
+@media(max-width:1150px){body.cookie-fullscreen .cookie-header{grid-template-columns:1fr auto;gap:12px}body.cookie-fullscreen .cookie-controls{grid-column:2}body.cookie-fullscreen .cookie-hud-metrics{grid-column:1/-1;grid-row:2;padding:7px}body.cookie-fullscreen .cookie-hud-metrics strong{font-size:18px}body.cookie-fullscreen .cookie-hud-metrics>div{justify-content:flex-start}body.cookie-fullscreen .cookie-hud-metrics span{display:flex;gap:10px;align-items:baseline}body.cookie-fullscreen .cookie-workshop{grid-template-columns:minmax(280px,1fr) minmax(340px,1.1fr);gap:12px;overflow:auto;align-items:start}body.cookie-fullscreen .cookie-play-panel{grid-column:1;grid-row:1;padding:20px;min-height:390px}body.cookie-fullscreen .cookie-command-panel{grid-column:1;grid-row:2;overflow:visible}body.cookie-fullscreen .cookie-production{grid-column:2;grid-row:1/3;height:100%;max-height:calc(100dvh - 215px);position:sticky;top:0}body.cookie-fullscreen .cookie-nav{overflow-x:auto;scrollbar-width:thin}body.cookie-fullscreen .cookie-nav [role=tab]{flex:0 0 auto}body.cookie-fullscreen .cookie-click-stage{min-height:200px}body.cookie-fullscreen .giant-cookie{width:210px}body.cookie-fullscreen .cookie-command-panel>.cookie-rules{display:block}}
+@media(max-width:750px),(max-height:520px){body.cookie-fullscreen{overflow:auto}body.cookie-fullscreen .app-shell,body.cookie-fullscreen .app-shell>main,body.cookie-fullscreen .app-shell>main>.view-panel{height:auto;min-height:100dvh}body.cookie-fullscreen .cookie-game{height:auto;min-height:100dvh}body.cookie-fullscreen .cookie-header{position:sticky;top:0;z-index:28;background:#131721f5;backdrop-filter:blur(18px);grid-template-columns:1fr auto;padding:10px 0;gap:10px}body.cookie-fullscreen .cookie-heading h1{font-size:25px}body.cookie-fullscreen .cookie-save{display:none}body.cookie-fullscreen .cookie-hud-metrics{padding:8px 0}body.cookie-fullscreen .cookie-hud-metrics>div{gap:6px;padding:0 10px;justify-content:center}body.cookie-fullscreen .cookie-hud-metrics span{display:block}body.cookie-fullscreen .cookie-hud-metrics small{font-size:12px}body.cookie-fullscreen .cookie-hud-metrics strong{font-size:18px}body.cookie-fullscreen .cookie-hud-metrics svg{display:none}body.cookie-fullscreen .cookie-controls{gap:4px;max-width:230px}body.cookie-fullscreen .cookie-controls .button{padding:8px;min-height:40px;font-size:12px}body.cookie-fullscreen .cookie-control-buttons{width:auto;gap:5px}body.cookie-fullscreen .cookie-control-label{display:none}body.cookie-fullscreen .cookie-volume{position:absolute;right:0;top:100%;width:230px;background:#1d2332;padding:10px;border:1px solid #ffc67540;border-radius:12px;z-index:40}body.cookie-fullscreen .cookie-volume small{display:none}body.cookie-fullscreen .cookie-tabs{overflow:visible;min-height:auto}body.cookie-fullscreen .cookie-nav{padding:5px!important;gap:4px!important;overflow-x:auto;justify-content:flex-start;flex-wrap:nowrap;max-width:100%}body.cookie-fullscreen .cookie-nav [role=tab]{font-size:14px;padding:10px 13px;flex:0 0 auto}body.cookie-fullscreen .cookie-tabs>[role=tabpanel],body.cookie-fullscreen .cookie-tabs>[role=tabpanel]:has(>.cookie-workshop){overflow:visible;padding:0}body.cookie-fullscreen .cookie-workshop{display:flex;flex-direction:column;height:auto;overflow:visible}body.cookie-fullscreen .cookie-play-panel,body.cookie-fullscreen .cookie-command-panel,body.cookie-fullscreen .cookie-production{width:100%;height:auto;max-height:none;min-height:0;position:relative;top:auto;overflow:visible}body.cookie-fullscreen .cookie-play-panel{padding:22px 18px}body.cookie-fullscreen .cookie-click-stage{min-height:230px}body.cookie-fullscreen .giant-cookie{width:210px}body.cookie-fullscreen .cookie-bank>strong{font-size:44px}body.cookie-fullscreen .cookie-command-panel{padding:18px}body.cookie-fullscreen .auto-tiers{grid-template-columns:repeat(4,1fr)}body.cookie-fullscreen .auto-tiers small{width:100%}body.cookie-fullscreen .cookie-building-list{overflow:visible;padding:10px;scrollbar-gutter:auto}body.cookie-fullscreen .cookie-upgrade-grid{grid-template-columns:repeat(2,minmax(0,1fr))}body.cookie-fullscreen .cookie-achievements{grid-template-columns:repeat(2,minmax(0,1fr))}body.cookie-fullscreen .cookie-unlock-toaster{bottom:18px!important;right:14px!important;left:14px!important}}
+
+/* Bonus tokens occupy their own lane; the lane never steals game input. */
+.cookie-flyby-lane{position:fixed;inset:auto 0 28px;height:86px;z-index:35;pointer-events:none;overflow:hidden}
+.cookie-flyby{position:absolute;left:0;top:14px;display:flex;align-items:center;gap:12px;padding:10px 18px 10px 11px;min-height:64px;max-width:230px;border:1px solid #ffe2a9;border-radius:22px;background:linear-gradient(130deg,#4d362ff5,#2a2143fa);color:#ffeac7;box-shadow:0 0 24px #ffbc6266,0 8px 24px #0006;pointer-events:auto;animation:cookie-cross 22s linear both;animation-delay:var(--flight-delay);isolation:isolate;white-space:nowrap}
+.cookie-flyby:disabled{opacity:1;cursor:progress}.cookie-flyby:hover,.cookie-flyby:focus-visible{border-color:#fff1d8;box-shadow:0 0 40px #ffbc6290}.cookie-flyby:active{filter:brightness(1.3)}
+.cookie-flyby.event-gift{border-color:#edc8ff;background:linear-gradient(130deg,#553879f5,#282441fa);box-shadow:0 0 24px #b87bfa50,0 8px 24px #0006}.cookie-flyby.event-cookie{background:linear-gradient(130deg,#654125f5,#312c3afa)}
+.flyby-icon{width:43px;height:43px;display:grid;place-items:center;background:#ffcf7720;border-radius:50%;flex:none}.flyby-icon>svg{filter:drop-shadow(0 0 6px #ffc67560)}.cookie-flyby>span>small{display:block;font-size:10px;letter-spacing:.17em;font-weight:800;color:#ffc675}.cookie-flyby strong{display:block;font-size:15px;line-height:1.4}.cookie-flyby>span>span{font-size:12px;color:#d0bdb1}.flyby-trail{position:absolute;right:100%;padding-right:8px;letter-spacing:8px;color:#ffd195;font-size:25px;text-shadow:0 0 15px #ffd195;pointer-events:none}.flyby-orbit{position:absolute;inset:-5px;border:1px solid #ffd19540;border-radius:26px;z-index:-1;pointer-events:none}
+@keyframes cookie-cross{0%{transform:translateX(-260px) translateY(4px) rotate(-3deg)}25%{transform:translateX(calc(25vw - 150px)) translateY(-8px) rotate(2deg)}50%{transform:translateX(calc(50vw - 110px)) translateY(5px) rotate(-2deg)}75%{transform:translateX(calc(75vw - 60px)) translateY(-8px) rotate(2deg)}100%{transform:translateX(calc(100vw + 30px)) translateY(3px) rotate(-3deg)}}
+body.cookie-fullscreen .cookie-unlock-toaster{bottom:124px!important}
+@media(prefers-reduced-motion:reduce){.cookie-flyby{animation:none;left:auto;right:22px;transform:none}.flyby-trail{display:none}}
+@media(max-width:600px){.cookie-flyby-lane{bottom:12px}.cookie-flyby{max-width:210px;padding-right:12px}.cookie-flyby strong{font-size:14px}.cookie-flyby>span>small{font-size:10px}.cookie-flyby:focus-visible{outline-offset:2px}}
+
+@media(max-width:750px),(max-height:520px){body.cookie-fullscreen .cookie-controls{min-height:64px;align-content:center}body.cookie-fullscreen .cookie-volume{position:static;width:auto;max-width:100%;padding:0;border:0;background:none;gap:6px}body.cookie-fullscreen .cookie-volume input{width:78px}body.cookie-fullscreen .cookie-heading{align-self:center}}

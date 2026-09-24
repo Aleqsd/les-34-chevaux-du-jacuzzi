@@ -1,4 +1,5 @@
-/** Original, locally synthesized soundtrack: 16 bars at 118 BPM (~32.5 s).
+/** Four original, locally synthesized tracks. Each rotates after four complete
+ * 16-bar loops (~2 min), always on a musical boundary. Pausing freezes playback.
  * Call createCookieMusic only from an explicit user interaction. No autoplay,
  * network requests, audio files or storage; the caller owns the opt-in UI.
  */
@@ -13,22 +14,84 @@ type AudioWindow = Window & typeof globalThis & {
   webkitAudioContext?: typeof AudioContext;
 };
 
-const BPM = 118;
-const STEP = 60 / BPM / 2;
+interface Track {
+  name: string;
+  bpm: number;
+  roots: number[];
+  chords: number[][];
+  themes: number[][][];
+  kicks: number[];
+  bass: number[];
+  lead: OscillatorType;
+  arpeggio: OscillatorType;
+  snareNote: number;
+}
+
 const LOOKAHEAD = 0.12;
-const ROOTS = [36, 45, 41, 43];
-const CHORDS = [[60, 64, 67], [57, 60, 64], [53, 57, 60], [55, 59, 62]];
-// Two call-and-response themes; zero denotes a deliberate breath.
-const THEMES = [
-  [[76, 0, 79, 76, 74, 72, 0, 74], [72, 0, 76, 79, 76, 72, 71, 0],
-    [69, 72, 0, 77, 76, 72, 69, 0], [71, 74, 79, 0, 77, 74, 71, 74]],
-  [[79, 76, 0, 84, 83, 79, 76, 0], [81, 0, 79, 76, 72, 76, 0, 79],
-    [77, 76, 72, 0, 69, 72, 77, 79], [79, 0, 77, 74, 71, 74, 0, 72]],
+const STEPS_PER_LOOP = 128;
+const LOOPS_PER_TRACK = 4;
+// Every melody is original. Zero denotes a deliberate breath in the phrase.
+const TRACKS: Track[] = [
+  {
+    name: "Biscuit cosmique", bpm: 118,
+    roots: [36, 45, 41, 43],
+    chords: [[60, 64, 67], [57, 60, 64], [53, 57, 60], [55, 59, 62]],
+    themes: [
+      [[76, 0, 79, 76, 74, 72, 0, 74], [72, 0, 76, 79, 76, 72, 71, 0],
+        [69, 72, 0, 77, 76, 72, 69, 0], [71, 74, 79, 0, 77, 74, 71, 74]],
+      [[79, 76, 0, 84, 83, 79, 76, 0], [81, 0, 79, 76, 72, 76, 0, 79],
+        [77, 76, 72, 0, 69, 72, 77, 79], [79, 0, 77, 74, 71, 74, 0, 72]],
+    ],
+    kicks: [0, 2, 4, 6], bass: [0, 3, 4, 7], lead: "triangle", arpeggio: "sine", snareNote: 50,
+  },
+  {
+    name: "Caramel disco", bpm: 124,
+    roots: [41, 38, 46, 36],
+    chords: [[57, 60, 65], [57, 62, 65], [58, 62, 65], [55, 60, 64]],
+    themes: [
+      [[77, 0, 81, 0, 84, 81, 79, 77], [74, 77, 0, 81, 79, 0, 77, 74],
+        [77, 0, 74, 77, 82, 81, 0, 77], [76, 79, 0, 84, 82, 79, 76, 0]],
+      [[84, 81, 77, 0, 81, 84, 0, 86], [86, 84, 81, 77, 0, 74, 77, 81],
+        [82, 0, 81, 77, 74, 77, 0, 81], [79, 76, 72, 0, 76, 79, 0, 77]],
+    ],
+    kicks: [0, 2, 4, 6], bass: [0, 2, 3, 5, 6, 7], lead: "triangle", arpeggio: "triangle", snareNote: 53,
+  },
+  {
+    name: "Jacuzzi néon", bpm: 128,
+    roots: [38, 35, 43, 45],
+    chords: [[62, 66, 69], [59, 62, 66], [55, 59, 62], [57, 61, 64]],
+    themes: [
+      [[78, 81, 0, 86, 81, 78, 0, 76], [78, 0, 74, 78, 83, 81, 78, 0],
+        [79, 78, 74, 0, 71, 74, 79, 0], [76, 81, 0, 85, 83, 81, 76, 73]],
+      [[86, 0, 81, 78, 81, 86, 88, 86], [83, 81, 78, 0, 74, 78, 81, 83],
+        [86, 83, 79, 78, 0, 74, 79, 83], [85, 83, 81, 0, 76, 73, 0, 74]],
+    ],
+    kicks: [0, 2, 4, 7], bass: [0, 1, 4, 6, 7], lead: "triangle", arpeggio: "sine", snareNote: 54,
+  },
+  {
+    name: "Goûter tropical", bpm: 114,
+    roots: [43, 40, 36, 38],
+    chords: [[55, 59, 62], [55, 59, 64], [55, 60, 64], [54, 57, 62]],
+    themes: [
+      [[79, 0, 83, 81, 79, 0, 74, 0], [76, 79, 0, 83, 81, 79, 0, 76],
+        [76, 0, 79, 84, 83, 79, 76, 0], [78, 0, 81, 78, 74, 76, 78, 0]],
+      [[83, 79, 0, 86, 83, 81, 79, 0], [83, 0, 81, 79, 76, 79, 0, 83],
+        [84, 83, 79, 0, 76, 79, 84, 83], [81, 78, 74, 0, 78, 81, 0, 79]],
+    ],
+    kicks: [0, 3, 4, 6], bass: [0, 3, 4, 7], lead: "sine", arpeggio: "triangle", snareNote: 55,
+  },
 ];
+
+export const COOKIE_MUSIC_TRACKS = TRACKS.map(track => ({
+  name: track.name,
+  bpm: track.bpm,
+  secondsPerRotation: 60 / track.bpm * 64 * LOOPS_PER_TRACK,
+}));
+
 const hz = (note: number) => 440 * 2 ** ((note - 69) / 12);
 const clamp = (value: number) => Number.isFinite(value) ? Math.max(0, Math.min(1, value)) : 0;
 
-export async function createCookieMusic(volume = 0.3): Promise<CookieMusic> {
+export async function createCookieMusic(volume = 0.3, onTrack?: (name: string) => void): Promise<CookieMusic> {
   const Audio = window.AudioContext || (window as AudioWindow).webkitAudioContext;
   if (!Audio) throw new Error("Ce navigateur ne prend pas en charge la musique du jeu.");
   const context = new Audio({ latencyHint: "playback" });
@@ -44,7 +107,7 @@ export async function createCookieMusic(volume = 0.3): Promise<CookieMusic> {
 
   // A quiet stereo echo gives the lead room without muddying the beat.
   const echo = context.createDelay(1);
-  echo.delayTime.value = STEP * 1.5;
+  echo.delayTime.value = 60 / TRACKS[0].bpm / 2 * 1.5;
   const feedback = context.createGain();
   feedback.gain.value = 0.16;
   const wet = context.createGain();
@@ -66,6 +129,9 @@ export async function createCookieMusic(volume = 0.3): Promise<CookieMusic> {
   let playing = false;
   let generation = 0;
   let step = 0;
+  let trackIndex = 0;
+  let completedLoops = 0;
+  let announcedTrack = -1;
   let nextTime = context.currentTime + 0.04;
   let timer: ReturnType<typeof setTimeout> | undefined;
   const voices = new Map<AudioScheduledSourceNode, AudioNode[]>();
@@ -110,7 +176,7 @@ export async function createCookieMusic(volume = 0.3): Promise<CookieMusic> {
     oscillator.stop(time + 0.2);
   }
 
-  function percussion(time: number, snare: boolean, accent = false) {
+  function percussion(time: number, snare: boolean, accent = false, snareNote = 50) {
     const source = context.createBufferSource();
     const filter = context.createBiquadFilter();
     const envelope = context.createGain();
@@ -125,46 +191,64 @@ export async function createCookieMusic(volume = 0.3): Promise<CookieMusic> {
     track(source, [filter, envelope]);
     source.start(time);
     source.stop(time + duration + 0.01);
-    if (snare) tone(50, time, 0.075, 0.035, "triangle");
+    if (snare) tone(snareNote, time, 0.075, 0.035, "triangle");
   }
 
-  function schedule(index: number, time: number) {
+  function schedule(index: number, time: number, song: Track, stepDuration: number) {
     const bar = Math.floor(index / 8);
     const beat = index % 8;
     const chord = bar % 4;
     const section = Math.floor(bar / 4);
-    // A lighter third phrase leaves space before the final lift.
+    // Each 16-bar loop has a lighter third phrase and a final lift.
     const breakdown = section === 2;
-    if (beat % 2 === 0 && (!breakdown || beat === 0 || beat === 4)) kick(time);
-    if (beat === 2 || beat === 6) percussion(time, true);
+    if (song.kicks.includes(beat) && (!breakdown || beat === 0 || beat === 4)) kick(time);
+    if (beat === 2 || beat === 6) percussion(time, true, false, song.snareNote);
     if (!breakdown || beat % 2 === 1) percussion(time, false, beat % 2 === 1);
-    if (beat === 0 || beat === 3 || beat === 4 || beat === 7) {
-      tone(ROOTS[chord] + (beat === 7 ? 12 : 0), time,
-        STEP * (beat === 0 ? 1.7 : 0.7), 0.105, "triangle");
+    if (song.bass.includes(beat)) {
+      tone(song.roots[chord] + (beat === 7 ? 12 : 0), time,
+        stepDuration * (beat === 0 ? 1.7 : 0.7), 0.105, "triangle");
     }
     if (beat % 2 === 1) {
-      const arpeggio = CHORDS[chord][Math.floor(beat / 2) % 3] + 12;
-      tone(arpeggio, time, STEP * 0.62, breakdown ? 0.018 : 0.026, "sine", true);
+      const arpeggio = song.chords[chord][Math.floor(beat / 2) % 3] + 12;
+      tone(arpeggio, time, stepDuration * 0.62, breakdown ? 0.018 : 0.026, song.arpeggio, true);
     }
-    if (beat === 0) CHORDS[chord].forEach(note => tone(note, time, STEP * 6.8, 0.016, "sine"));
-    const lead = THEMES[section % 2][chord][beat];
+    if (beat === 0) song.chords[chord].forEach(note => tone(note, time, stepDuration * 6.8, 0.016, "sine"));
+    const lead = song.themes[section % 2][chord][beat];
     if (lead && (!breakdown || beat < 4)) {
-      tone(lead, time, STEP * 0.78, 0.056, "triangle", true);
-      if (section === 3 && beat % 2 === 0) tone(lead - 12, time, STEP * 0.6, 0.014, "square");
+      tone(lead, time, stepDuration * 0.78, 0.056, song.lead, true);
+      if (section === 3 && beat % 2 === 0) tone(lead - 12, time, stepDuration * 0.6, 0.014, "square");
     }
     if (bar % 4 === 3 && beat === 7 && !breakdown) {
-      percussion(time + STEP / 2, true);
+      percussion(time + stepDuration / 2, true, false, song.snareNote);
     }
   }
 
   function tick() {
     if (stopped || !playing) return;
-    // Never replay missed ticks in a burst after a throttled/background tab.
+    // Never catch up with a burst after timer throttling. Only scheduled music
+    // advances the rotation; wall-clock time spent paused is never counted.
     if (nextTime < context.currentTime) nextTime = context.currentTime + 0.025;
     while (nextTime < context.currentTime + LOOKAHEAD) {
-      schedule(step, nextTime);
-      step = (step + 1) % 128;
-      nextTime += STEP;
+      if (step === 0 && completedLoops === LOOPS_PER_TRACK) {
+        trackIndex = (trackIndex + 1) % TRACKS.length;
+        completedLoops = 0;
+      }
+      const song = TRACKS[trackIndex];
+      const stepDuration = 60 / song.bpm / 2;
+      if (announcedTrack !== trackIndex) {
+        announcedTrack = trackIndex;
+        // Gentle tempo adjustment preserves the echo tail across track changes.
+        echo.delayTime.setTargetAtTime(stepDuration * 1.5, nextTime, 0.08);
+        try { onTrack?.(song.name); } catch { /* UI callbacks cannot interrupt audio. */ }
+      }
+      if (stopped || !playing) return;
+      schedule(step, nextTime, song, stepDuration);
+      nextTime += stepDuration;
+      step++;
+      if (step === STEPS_PER_LOOP) {
+        step = 0;
+        completedLoops++;
+      }
     }
     timer = setTimeout(tick, 25);
   }

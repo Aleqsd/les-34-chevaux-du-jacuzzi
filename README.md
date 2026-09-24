@@ -115,3 +115,13 @@ Ne jamais réinitialiser la base en publiant. Garder les identifiants de recette
 Avant chaque modification de persistance : exécuter `node scripts/backup-progress.mjs`, puis les tests `node scripts/verify-cookie.mjs` sur localhost. La copie JSON vérifiée par SHA-256 reste dans le dossier ignoré `.sites-runtime/backups`. C’est une sauvegarde logique des données accessibles par les API, sans les reçus d’actions ni une garantie de cohérence transactionnelle ; elle ne remplace pas la base active. Toute restauration doit d’abord être validée dans une base isolée. Ne jamais publier ces fichiers sur GitHub.
 
 Le numéro du pied de page vient de la version de package.json. Le build enregistre automatiquement la date et l’heure de préparation dans lib/site-release.json ; affichage en heure de Paris, identique pour tous les visiteurs. Incrémenter la version avant toute nouvelle publication.
+
+### Arcade v13
+
+Le plein écran utilise trois panneaux sur les grands écrans : cookie, bonus/pilote et production. La boutique défile indépendamment ; réserve et rendements restent dans la barre supérieure, y compris dans les recettes. Mobile et très petites hauteurs gardent un défilement de page simple.
+
+Trois surprises traversent ponctuellement l’écran : Comète sucrée, Biscuit express et Cadeau du crew. Un passage toutes les 90–180 secondes après récolte/expiration ; 22 secondes visibles avec 2 secondes de tolérance réseau. Le serveur valide chaque récolte et la déduplique. La récompense dépend de la production de base, sans multiplier le bonus de fournée. Les événements manqués ne génèrent rien hors ligne. Le champ de sauvegarde nextEventAt est optionnel et initialisé uniquement par POST, jamais par GET.
+
+Les événements ont un tintement à l’arrivée et un jingle à la récolte. Le bouton cloche coupe ces effets indépendamment de la musique ; le navigateur attend une interaction avec le jeu pour autoriser le son. En mode animations réduites, le bonus reste immobile.
+
+La playlist originale contient Biscuit cosmique, Caramel disco, Jacuzzi néon et Goûter tropical. Elle change après quatre boucles de 16 mesures, soit toutes les 2 à 2 min 15 selon le tempo. Le morceau en cours est affiché ; une pause fige la rotation. La musique reste désactivée par défaut.
