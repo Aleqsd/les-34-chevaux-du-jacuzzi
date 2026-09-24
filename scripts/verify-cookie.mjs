@@ -87,7 +87,7 @@ try{
  await action({kind:"mission",mission:"m1"},uuid(),400);const missionRetry=await action({kind:"mission",mission:"m1"},missionId);check("mission UUID retry idempotent",missionRetry.player.balance===25&&missionRetry.player.version===r.player.version,missionRetry);
  seed({balance:1000,runEarned:1e9,lifetime:1e9,clicks:500,goldenClicks:4,achievements:["bake0","click0"],missions:["m1"],maxBuildings:50,buildings:[10,0,0,0,0,0,0,0,0,0],upgrades:["spoon_double"]});
  r=await action({kind:"prestige"});const prestigeOne=r.player;
- check("prestige resets only run resources",prestigeOne.prestige===1&&prestigeOne.resets===1&&prestigeOne.balance===0&&prestigeOne.runEarned===0&&prestigeOne.buildings.every(x=>x===0)&&prestigeOne.upgrades.length===0,r);
+ check("prestige resets only run resources",prestigeOne.prestige===1&&prestigeOne.resets===1&&prestigeOne.balance===game.rebuildStarter(1)&&prestigeOne.runEarned===0&&prestigeOne.buildings.every(x=>x===0)&&prestigeOne.upgrades.length===0,r);
  check("prestige preserves lifetime stats missions achievements",prestigeOne.lifetime>=1e9&&prestigeOne.clicks===500&&prestigeOne.goldenClicks===4&&prestigeOne.maxBuildings===50&&prestigeOne.missions.includes("m1")&&prestigeOne.achievements.includes("bake0")&&prestigeOne.achievements.includes("prestige0"),r);
  await action({kind:"prestige"},uuid(),400);
  seed({...prestigeOne,runEarned:1e9,lifetime:prestigeOne.lifetime+1e9,updated:Date.now()});
@@ -96,7 +96,7 @@ try{
  r=await action({kind:"prestige"});check("nonfarm prestige requires cumulative4b for second point",r.player.prestige===2&&r.player.resets===2&&r.player.banked>=4e9,r);
  seed({lifetime:1e15-1});await profile(65,"none",400);
  seed({lifetime:1e15});await profile(65);await profile(65,"sparkle",400);
- for(const bad of [{kind:"click",count:26},{kind:"click",count:0},{kind:"click",count:1.5},{kind:"buy",building:10,quantity:1},{kind:"buy",building:0,quantity:2},{kind:"oops"}])await action(bad,uuid(),400);
+ for(const bad of [{kind:"click",count:26},{kind:"click",count:0},{kind:"click",count:1.5},{kind:"buy",building:10,quantity:1},{kind:"buy",building:0,quantity:0},{kind:"buy",building:0,quantity:1001},{kind:"buy",building:0,quantity:1.5},{kind:"oops"}])await action(bad,uuid(),400);
  await req("/api/cookie",{author,id:"bad",action:{kind:"sync"}},400);
  // Verify replay horizon explicitly, using only our own fixture receipt.
  seed({balance:1000});const oldId=uuid();const oldPurchase=await action({kind:"buy",building:0,quantity:1},oldId);
@@ -160,8 +160,50 @@ try{
  await action({kind:"upgrade",upgrade:"spoon_master"});r=await action({kind:"upgrade",upgrade:"spoon_signature"});check("building signature stacks to8x and keeps prerequisites",near(game.baseProduction(r.player),40),r);
  const gainBefore=game.clickPower(r.player);seed({...r.player,balance:1e7,clicks:2000});r=await action({kind:"upgrade",upgrade:"whisk"});check("new click recipe increases full gain25percent",near(game.clickPower(r.player),gainBefore*1.25),r);
  const allRecipes=game.freshCookiePlayer(1000);allRecipes.upgrades=game.UPGRADES.map(u=>u.id);allRecipes.buildings=game.BUILDINGS.map(()=>1);allRecipes.goldenClicks=34;game.award(allRecipes);check("new achievements award retroactively from existing stats",["recipe5","diversity3","golden3","flow0"].every(id=>allRecipes.achievements.includes(id)),allRecipes);
- allRecipes.runEarned=1e9;allRecipes.lifetime=1e9;const previousRecords={recipes:allRecipes.maxRecipes,kinds:allRecipes.maxBuildingKinds,production:allRecipes.maxProduction};game.applyCookieAction(allRecipes,{kind:"prestige"},1000);check("prestige preserves records and eligibility for unclaimed goals",game.cookieMetric(allRecipes,"recipes")===40&&game.cookieMetric(allRecipes,"buildingKinds")===10&&game.cookieMetric(allRecipes,"production")===previousRecords.production&&allRecipes.achievements.includes("recipe5"),allRecipes);game.applyCookieAction(allRecipes,{kind:"mission",mission:"m21"},1000);check("recipe mission can be claimed after prestige",allRecipes.missions.includes("m21")&&allRecipes.balance===1e7);
+ allRecipes.runEarned=1e9;allRecipes.lifetime=1e9;const previousRecords={recipes:allRecipes.maxRecipes,kinds:allRecipes.maxBuildingKinds,production:allRecipes.maxProduction};game.applyCookieAction(allRecipes,{kind:"prestige"},1000);check("prestige preserves records and eligibility for unclaimed goals",game.cookieMetric(allRecipes,"recipes")===40&&game.cookieMetric(allRecipes,"buildingKinds")===10&&game.cookieMetric(allRecipes,"production")===previousRecords.production&&allRecipes.achievements.includes("recipe5"),allRecipes);game.applyCookieAction(allRecipes,{kind:"mission",mission:"m21"},1000);check("recipe mission can be claimed after prestige",allRecipes.missions.includes("m21")&&allRecipes.balance===1e7+game.rebuildStarter(1));
  const sharing=game.freshCookiePlayer(0);sharing.upgrades=["rhythm","cadence","pulse","resonance"];check("late recipes give75percent CPS share",near(game.clickProductionShare(sharing),.75));
+
+ const insightModule={exports:{}};new Function("exports","module","require",ts.transpileModule(await fs.readFile("lib/cookie-insights.ts","utf8"),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText)(insightModule.exports,insightModule,id=>{if(id==="@/lib/cookie-game")return game;throw Error("Unexpected insight dependency");});const insights=insightModule.exports;
+ const maxPlayer=game.freshCookiePlayer(0);let maxBoundaries=true;for(const owned of [0,1,25,100,999,1000]){maxPlayer.buildings[0]=owned;for(const quantity of [1,7,10,100]){const cap=1000-owned;if(quantity>cap)continue;const cost=game.buildingPrice(maxPlayer,0,quantity);for(const money of [cost-1,cost,cost+1]){const q=insights.maxAffordableBuildings(maxPlayer,0,money);if(q<0||q>cap||q>0&&game.buildingPrice(maxPlayer,0,q)>money+1e-6||q<cap&&game.buildingPrice(maxPlayer,0,q+1)<=money+1e-6)maxBoundaries=false;}}}check("maximum quantity respects exact affordability and remaining capacity",maxBoundaries);
+ maxPlayer.buildings[0]=1000;check("max at building cap returns0",insights.maxAffordableBuildings(maxPlayer,0,1e100)===0);maxPlayer.buildings[0]=0;check("max cannot show free zero purchase",insights.maxAffordableBuildings(maxPlayer,0,14)===0);
+ maxPlayer.buildings[0]=10;maxPlayer.upgrades=["spoon_double"];maxPlayer.prestige=5;const beforeInsight=JSON.stringify(maxPlayer),impact=insights.purchaseImpact(maxPlayer,0,10);check("lot impact includes recipes and prestige without mutating save",near(impact.production,3)&&JSON.stringify(maxPlayer)===beforeInsight,{impact});
+ const boostTest={...maxPlayer,rushUntil:100000};check("wait estimates ignore temporary rush",insights.steadyIncome(boostTest,false)===game.baseProduction(maxPlayer)&&insights.waitForPurchase(100,50,10)===5);
+ seed({balance:10000});const sevenCost=game.buildingPrice(game.freshCookiePlayer(0),0,7),sevenId=uuid();r=await action({kind:"buy",building:0,quantity:7},sevenId);check("arbitrary maximum-style lot charges correct price",r.player.buildings[0]===7&&near(r.player.balance,10000-sevenCost),r);const sevenReplay=await action({kind:"buy",building:0,quantity:7},sevenId);check("maximum-style purchase retains UUID protection",sevenReplay.player.buildings[0]===7&&sevenReplay.player.balance===r.player.balance);
+ const guided=game.freshCookiePlayer(0);guided.clicks=25;check("next goal prioritizes a claimable mission",insights.nextCookieMission(guided)?.id==="m1");guided.missions=game.COOKIE_MISSIONS.map(m=>m.id);check("completed goals do not reappear as guidance",!insights.nextCookieMission(guided));
+
+ // Rebuild aid is additive, per-run, balance-only, and old-tab safe.
+ const oldReset={...game.freshCookiePlayer(1000),prestige:1,resets:1,balance:123,lifetime:1e9,banked:1e9,clicks:2000,missions:["m1","m5","m9"],maxBuildings:250,maxRecipes:40};
+ previousGame.settle(oldReset,1000);const preservedReset=structuredClone(oldReset);game.settle(oldReset,1000);
+ check("legacy prestige receives one starter without losing existing fields",oldReset.balance===398&&oldReset.rebuild.run===1&&oldReset.rebuild.claimed.length===0&&Object.keys(preservedReset).filter(k=>k!=="balance").every(k=>JSON.stringify(oldReset[k])===JSON.stringify(preservedReset[k])),oldReset);
+ game.settle(oldReset,1000);check("starter is not repeated on sync",oldReset.balance===398);
+ check("historical records never satisfy current rebuild tasks",game.REBUILD_MISSIONS.every(m=>game.rebuildMetric(oldReset,m.metric)===0));
+ check("rebuild aid caps keep late prestige controlled",game.rebuildStarter(1e12)===1e6&&game.rebuildReward({...oldReset,prestige:1e12},250000)===2500000);
+ seed({prestige:1,resets:1,balance:100,lifetime:1e9,banked:1e9,updated:Date.now()+60000});
+ const readBefore=JSON.stringify(persisted());const starterReads=await Promise.all([read(),read()]);check("read-only preview offers consistent starter without writing",starterReads.every(x=>x.player.balance===375)&&JSON.stringify(persisted())===readBefore);
+ const starters=await Promise.all([action({kind:"sync"}),action({kind:"sync"})]);r=await read();check("concurrent sync initializes starter once",starters.every(x=>x.status===200)&&r.player.balance===375&&r.player.runEarned===0&&r.player.lifetime===1e9,r);
+ await action({kind:"rebuild",mission:"r1",run:1},uuid(),400);
+ seed({prestige:1,resets:1,balance:10,lifetime:1e9,banked:1e9,buildings:[5,0,0,0,0,0,0,0,0,0],rebuild:{run:1,claimed:[]},updated:Date.now()+60000});
+ const rebuildId=uuid(),rebuildFirst=await action({kind:"rebuild",mission:"r1",run:1},rebuildId);
+ check("rebuild reward funds only balance",rebuildFirst.rebuildBonus===550&&rebuildFirst.player.balance===560&&rebuildFirst.player.lifetime===1e9&&rebuildFirst.player.runEarned===0&&rebuildFirst.player.banked===1e9,rebuildFirst);
+ const rebuildReplay=await action({kind:"rebuild",mission:"r1",run:1},rebuildId);check("rebuild UUID grants reward once",rebuildReplay.player.balance===560&&rebuildReplay.player.version===rebuildFirst.player.version);
+ await action({kind:"rebuild",mission:"r1",run:1},uuid(),400);await action({kind:"rebuild",mission:"r2",run:0},uuid(),400);
+ seed({prestige:1,resets:1,lifetime:1e9,banked:1e9,buildings:[25,0,0,0,0,0,0,0,0,0],rebuild:{run:1,claimed:[]},updated:Date.now()+60000});
+ const rebuildParallel=await Promise.all([action({kind:"rebuild",mission:"r3",run:1},uuid(),null),action({kind:"rebuild",mission:"r3",run:1},uuid(),null)]);
+ check("two tabs cannot duplicate rebuild payout",rebuildParallel.filter(x=>x.status===200).length===1&&rebuildParallel.filter(x=>x.status===400).length===1);r=await read();check("parallel claim balance exactly once",r.player.balance===13750,r);
+ seed({prestige:1,resets:1,lifetime:4e9,banked:1e9,runEarned:3e9,missions:["m1","m5","m9"],rebuild:{run:1,claimed:["r1","r2","r3"]},updated:Date.now()+60000});
+ const resetId=uuid();r=await action({kind:"prestige"},resetId);const newRun=r.player;check("new prestige refreshes only rebuild goals and grants new starter",newRun.resets===2&&newRun.rebuild.run===2&&newRun.rebuild.claimed.length===0&&newRun.balance===300&&newRun.runEarned===0&&newRun.missions.join(",")==="m1,m5,m9",newRun);
+ const resetReplay=await action({kind:"prestige"},resetId);check("replayed prestige cannot refresh starter twice",resetReplay.player.balance===300&&resetReplay.player.resets===2);
+ await action({kind:"rebuild",mission:"r1",run:1},uuid(),400);
+ r=await action({kind:"rebuild",mission:"r1",run:1},rebuildId);check("old committed rebuild receipt cannot affect new run",r.player.balance===300&&r.player.rebuild.claimed.length===0&&r.player.resets===2,r);
+ for(const bad of [{kind:"rebuild",mission:"r1",run:-1},{kind:"rebuild",mission:"r1",run:1.5},{kind:"rebuild",mission:"r1"},{kind:"rebuild",mission:"missing",run:2}])await action(bad,uuid(),400);
+ seed({buildings:[100,0,0,0,0,0,0,0,0,0]});await action({kind:"rebuild",mission:"r6",run:0},uuid(),400);
+ const allRebuild={...game.freshCookiePlayer(0),prestige:1,resets:1,buildings:[100,0,0,0,0,0,0,0,0,0],upgrades:["thumb","hooves","rhythm","spoon_double","oven_double"]};game.settle(allRebuild,0);
+ for(const m of game.REBUILD_MISSIONS)game.applyCookieAction(allRebuild,{kind:"rebuild",mission:m.id,run:1},0);
+ check("all six rebuilding rewards never mint prestige progress",allRebuild.balance===372625&&allRebuild.lifetime===0&&allRebuild.runEarned===0&&game.prestigeGain(allRebuild)===0,allRebuild);
+ const previewP={...game.freshCookiePlayer(0),prestige:100,banked:101**2*1e9};const preview=insights.prestigePreview(previewP);
+ check("prestige preview measures relative multiplier correctly",near(preview.relative,1/110)&&preview.gain===1&&preview.current===11&&near(preview.next,11.1),preview);
+ check("prestige milestones require earned production",preview.milestones[0].gain===11&&preview.milestones[0].remaining===(111**2-101**2)*1e9,preview);
+ const resetGuidance={...game.freshCookiePlayer(0),prestige:1,resets:1,rebuild:{run:1,claimed:[]},buildings:[5,0,0,0,0,0,0,0,0,0]};check("compact goal prioritizes ready rebuilding reward",insights.nextCookieGoal(resetGuidance)?.id==="r1"&&insights.nextCookieGoal(resetGuidance)?.reward===550);
  // deterministic pure math verifies segmentation, replaying server game functions only.
  const p=game.freshCookiePlayer(1000);p.buildings[1]=1;p.rushUntil=78000;game.settle(p,41000);game.settle(p,101000);
  check("segmented settle equals single100s interval with77s boost",near(p.balance,562),p);

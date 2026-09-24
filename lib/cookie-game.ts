@@ -30,7 +30,7 @@ export const UPGRADES:Upgrade[]=[
 export const COOKIE_AVATARS=[{index:60,name:"Petit Biscuit",threshold:1},{index:61,name:"Donut fraise",threshold:1000},{index:62,name:"Croissant doré",threshold:1e6},{index:63,name:"Cupcake étoilé",threshold:1e9},{index:64,name:"Macaron cosmique",threshold:1e12},{index:65,name:"Roi Cacao",threshold:1e15},
  {index:66,name:"Mochi pêche",threshold:100},{index:67,name:"Chou chantilly",threshold:1e4},{index:68,name:"Gaufre miel",threshold:1e5},{index:69,name:"Pancake fraise",threshold:1e7},{index:70,name:"Éclair chocolat",threshold:1e8},{index:71,name:"Glace pistache",threshold:1e10},{index:72,name:"Bretzel caramel",threshold:1e11},{index:73,name:"Renard pâtissier",threshold:1e13},{index:74,name:"Chat barista",threshold:1e14},{index:75,name:"Dragon flambé",threshold:1e16},{index:76,name:"Licorne bonbon",threshold:1e17},{index:77,name:"Cheval stellaire",threshold:1e18}];
 export const latestCookieAvatar=(lifetime:number)=>COOKIE_AVATARS.reduce((best,a)=>a.threshold<=lifetime&&a.threshold>best.threshold?a:best,COOKIE_AVATARS[0]);
-export type CookiePlayer={balance:number;lifetime:number;runEarned:number;banked:number;clicks:number;buildings:number[];upgrades:string[];prestige:number;resets:number;maxBuildings:number;goldenClicks:number;rushUntil:number;goldenReadyAt:number;achievements:string[];missions:string[];clickCredit:number;autoCredit?:number;nextEventAt?:number;maxRecipes?:number;maxBuildingKinds?:number;maxProduction?:number;updated:number;version:number};
+export type CookiePlayer={balance:number;lifetime:number;runEarned:number;banked:number;clicks:number;buildings:number[];upgrades:string[];prestige:number;resets:number;maxBuildings:number;goldenClicks:number;rushUntil:number;goldenReadyAt:number;achievements:string[];missions:string[];clickCredit:number;autoCredit?:number;nextEventAt?:number;maxRecipes?:number;maxBuildingKinds?:number;maxProduction?:number;rebuild?:{run:number;claimed:string[]};updated:number;version:number};
 export const freshCookiePlayer=(now:number):CookiePlayer=>({balance:0,lifetime:0,runEarned:0,banked:0,clicks:0,buildings:BUILDINGS.map(()=>0),upgrades:[],prestige:0,resets:0,maxBuildings:0,goldenClicks:0,rushUntil:0,goldenReadyAt:now+60000,achievements:[],missions:[],clickCredit:25,updated:now,version:0});
 type Metric="lifetime"|"clicks"|"maxBuildings"|"prestige"|"goldenClicks"|"recipes"|"buildingKinds"|"production";
 export const COOKIE_ACHIEVEMENTS: {id:string;name:string;metric:Metric;target:number}[]=[
@@ -72,10 +72,27 @@ export const prestigeGain=(p:CookiePlayer)=>Math.max(0,Math.floor(Math.sqrt((p.b
 export function cookieMetric(p:CookiePlayer,metric:Metric){if(metric==="recipes")return Math.max(p.maxRecipes??0,p.upgrades.length);if(metric==="buildingKinds")return Math.max(p.maxBuildingKinds??0,p.buildings.filter(n=>n>0).length);if(metric==="production")return Math.max(p.maxProduction??0,baseProduction(p));return p[metric];}
 export function award(p:CookiePlayer){p.maxRecipes=cookieMetric(p,"recipes");p.maxBuildingKinds=cookieMetric(p,"buildingKinds");p.maxProduction=cookieMetric(p,"production");p.maxBuildings=Math.max(p.maxBuildings,p.buildings.reduce((a,b)=>a+b,0));p.achievements=[...new Set([...p.achievements,...COOKIE_ACHIEVEMENTS.filter(a=>cookieMetric(p,a.metric)>=a.target).map(a=>a.id)])];}
 const CAP=1e30;
+export const REBUILD_MISSIONS=[
+ {id:"r1",name:"Rallumer les fours",metric:"buildings",target:5,reward:500},
+ {id:"r2",name:"Retrouver le tour de main",metric:"recipes",target:1,reward:500},
+ {id:"r3",name:"Reformer la brigade",metric:"buildings",target:25,reward:12500},
+ {id:"r4",name:"Réouvrir le carnet",metric:"recipes",target:5,reward:25000},
+ {id:"r5",name:"Relancer la grande cuisine",metric:"buildings",target:50,reward:50000},
+ {id:"r6",name:"Le retour du chef",metric:"buildings",target:100,reward:250000}
+] as const;
+export const rebuildStarter=(stars:number)=>Math.floor(Math.min(1e6,250*(1+stars*.1)));
+export const rebuildReward=(p:CookiePlayer,base:number)=>Math.floor(base*Math.min(10,1+p.prestige*.1));
+export const rebuildMetric=(p:CookiePlayer,metric:"buildings"|"recipes")=>metric==="buildings"?p.buildings.reduce((a,b)=>a+b,0):p.upgrades.length;
+// Rebuilding grants are spending power, not production: never feed lifetime or prestige.
+function grantRebuild(p:CookiePlayer,amount:number){p.balance=Math.min(CAP,p.balance+amount);}
+export function ensureRebuild(p:CookiePlayer){
+ if(p.prestige<1||p.rebuild?.run===p.resets)return;
+ p.rebuild={run:p.resets,claimed:[]};grantRebuild(p,rebuildStarter(p.prestige));
+}
 export function earn(p:CookiePlayer,amount:number){amount=Math.max(0,Math.min(CAP,amount));p.balance=Math.min(CAP,p.balance+amount);p.lifetime=Math.min(CAP,p.lifetime+amount);p.runEarned=Math.min(CAP,p.runEarned+amount);}
 export const AUTO_TIERS=[{clicks:2000,rate:2,name:"Petit pilote"},{clicks:5000,rate:4,name:"Double cadence"},{clicks:15000,rate:6,name:"Turbo gourmand"},{clicks:50000,rate:10,name:"Vitesse galactique"}] as const;
 export const autoClickRate=(clicks:number)=>[...AUTO_TIERS].reverse().find(t=>clicks>=t.clicks)?.rate??0;
-export function settle(p:CookiePlayer,now:number){const end=Math.max(p.updated,now),elapsed=Math.min(end-p.updated,8*3600000),start=p.updated,boosted=Math.max(0,Math.min(start+elapsed,p.rushUntil)-start);const gain=baseProduction(p)*(elapsed+boosted*6)/1000;earn(p,gain);p.clickCredit=Math.min(25,p.clickCredit+(end-p.updated)*.025);const autoRate=autoClickRate(p.clicks);if(autoRate||p.autoCredit!==undefined)p.autoCredit=Math.min(autoRate*2,(p.autoCredit??0)+(end-p.updated)*autoRate/1000);p.updated=end;award(p);return gain;}
+export function settle(p:CookiePlayer,now:number){ensureRebuild(p);const end=Math.max(p.updated,now),elapsed=Math.min(end-p.updated,8*3600000),start=p.updated,boosted=Math.max(0,Math.min(start+elapsed,p.rushUntil)-start);const gain=baseProduction(p)*(elapsed+boosted*6)/1000;earn(p,gain);p.clickCredit=Math.min(25,p.clickCredit+(end-p.updated)*.025);const autoRate=autoClickRate(p.clicks);if(autoRate||p.autoCredit!==undefined)p.autoCredit=Math.min(autoRate*2,(p.autoCredit??0)+(end-p.updated)*autoRate/1000);p.updated=end;award(p);return gain;}
 export const COOKIE_EVENTS=[
  {id:"comet",name:"Comète sucrée",minimum:50,seconds:20,effect:"cookies",hint:"20 s de production à récolter"},
  {id:"cookie",name:"Biscuit express",minimum:75,seconds:30,effect:"cookies",hint:"30 s de production à récolter"},
@@ -88,8 +105,8 @@ export const EVENT_VISIBLE_MS=22000,EVENT_WINDOW_MS=24000;
 export const cookieEvent=(at:number)=>COOKIE_EVENTS[Math.floor(at/1000)%COOKIE_EVENTS.length];
 export const cookieEventReward=(p:CookiePlayer,at:number)=>cookieEvent(at).effect==="cookies"?Math.max(cookieEvent(at).minimum,baseProduction(p)*cookieEvent(at).seconds):0;
 const scheduleEvent=(p:CookiePlayer,now:number)=>{p.nextEventAt=now+90000+Math.floor(Math.random()*90001);};
-export type CookieAction={kind:"sync"}|{kind:"click";count:number}|{kind:"auto";count:number}|{kind:"event";eventAt:number}|{kind:"buy";building:number;quantity:number}|{kind:"upgrade";upgrade:string}|{kind:"golden"}|{kind:"mission";mission:string}|{kind:"prestige"};
-export function applyCookieAction(p:CookiePlayer,action:CookieAction,now:number){const offline=settle(p,now);let acceptedClicks=0,eventReward=0,eventEffect:"cookies"|"rush"|"golden"|undefined;
+export type CookieAction={kind:"sync"}|{kind:"click";count:number}|{kind:"auto";count:number}|{kind:"event";eventAt:number}|{kind:"buy";building:number;quantity:number}|{kind:"upgrade";upgrade:string}|{kind:"golden"}|{kind:"mission";mission:string}|{kind:"rebuild";mission:string;run:number}|{kind:"prestige"};
+export function applyCookieAction(p:CookiePlayer,action:CookieAction,now:number){const offline=settle(p,now);let acceptedClicks=0,eventReward=0,rebuildBonus=0,eventEffect:"cookies"|"rush"|"golden"|undefined;
  if(action.kind==="click"){acceptedClicks=Math.min(action.count,Math.floor(p.clickCredit));p.clickCredit-=acceptedClicks;p.clicks+=acceptedClicks;earn(p,acceptedClicks*clickPower(p,now));}
  if(action.kind==="auto"){if(!autoClickRate(p.clicks))throw Error("L’autoclic se débloque à 2 000 clics.");acceptedClicks=Math.min(action.count,Math.floor(p.autoCredit??0));p.autoCredit=(p.autoCredit??0)-acceptedClicks;p.clicks+=acceptedClicks;earn(p,acceptedClicks*clickPower(p,now));}
  if(action.kind==="event"){if(action.eventAt!==p.nextEventAt||now<action.eventAt||now>action.eventAt+EVENT_WINDOW_MS)throw Error("Cette surprise est déjà passée. La prochaine arrive bientôt !");const event=cookieEvent(action.eventAt);eventEffect=event.effect;eventReward=cookieEventReward(p,action.eventAt);if(event.effect==="rush")p.rushUntil=Math.max(p.rushUntil,now+event.seconds*1000);else if(event.effect==="golden")p.goldenReadyAt=Math.min(p.goldenReadyAt,now);else earn(p,eventReward);scheduleEvent(p,now);}
@@ -97,7 +114,8 @@ export function applyCookieAction(p:CookiePlayer,action:CookieAction,now:number)
  if(action.kind==="upgrade"){const u=UPGRADES.find(u=>u.id===action.upgrade);if(!u||p.upgrades.includes(u.id)||!upgradeReady(p,u))throw Error("Cette amélioration n’est pas disponible.");if(p.balance+1e-6<u.price)throw Error("Pas encore assez de cookies.");p.balance=Math.max(0,p.balance-u.price);p.upgrades.push(u.id);}
  if(action.kind==="golden"){if(now<p.goldenReadyAt)throw Error("Le prochain cookie doré se prépare.");earn(p,Math.max(25,baseProduction(p)*60));p.rushUntil=now+77000;p.goldenReadyAt=now+300000;p.goldenClicks++;}
  if(action.kind==="mission"){const m=COOKIE_MISSIONS.find(m=>m.id===action.mission);if(!m||p.missions.includes(m.id)||cookieMetric(p,m.metric)<m.target)throw Error("Cet objectif n’est pas encore disponible.");p.missions.push(m.id);earn(p,m.reward);}
- if(action.kind==="prestige"){const gain=prestigeGain(p);if(gain<1)throw Error("Produis davantage pour gagner une étoile.");p.prestige+=gain;p.resets++;p.banked=Math.min(CAP,p.banked+p.runEarned);p.balance=0;p.runEarned=0;p.buildings=BUILDINGS.map(()=>0);p.upgrades=[];p.rushUntil=0;p.goldenReadyAt=now+60000;}
+ if(action.kind==="rebuild"){const m=REBUILD_MISSIONS.find(m=>m.id===action.mission);if(p.prestige<1||action.run!==p.resets||!m||p.rebuild?.claimed.includes(m.id)||rebuildMetric(p,m.metric)<m.target)throw Error("Cet objectif n’est pas disponible pour cette fournée.");p.rebuild!.claimed.push(m.id);rebuildBonus=rebuildReward(p,m.reward);grantRebuild(p,rebuildBonus);}
+ if(action.kind==="prestige"){const gain=prestigeGain(p);if(gain<1)throw Error("Produis davantage pour gagner une étoile.");p.prestige+=gain;p.resets++;p.banked=Math.min(CAP,p.banked+p.runEarned);p.balance=0;p.runEarned=0;p.buildings=BUILDINGS.map(()=>0);p.upgrades=[];p.rushUntil=0;p.goldenReadyAt=now+60000;ensureRebuild(p);}
  if(!p.nextEventAt||now>p.nextEventAt+EVENT_WINDOW_MS)scheduleEvent(p,now);
- award(p);return {offline,acceptedClicks,...(eventEffect?{eventReward,eventEffect}:{})};
+ award(p);return {offline,acceptedClicks,...(rebuildBonus?{rebuildBonus}:{}),...(eventEffect?{eventReward,eventEffect}:{})};
 }
