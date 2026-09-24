@@ -1,0 +1,10 @@
+Use case: stylized-concept
+Asset type: original wide 16:10 raster fallback backdrop for an interactive 3D friends vacation clubhouse.
+Primary request: A premium whimsical isometric night diorama of a compact Mediterranean villa garden on a rounded floating island.
+Scene/backdrop: A deep dark navy background surrounding one complete floating garden island, with exposed sculpted rock sides beneath it.
+Subject: At front-right, a cyan illuminated circular jacuzzi with a small silver horse statue beside it. At left, an open-roof cozy cinema lounge with a sofa and a large glowing blank screen. At back-right, a warm wood terrace with a dining table beneath a pergola. A little barbecue counter, lush stylized trees, stepping-stone paths visibly connecting the distinct areas, and delicate string lights complete the compact clubhouse garden.
+Style/medium: Rich geometric low-poly 3D toy aesthetic, sophisticated materials and polished original illustration.
+Composition/framing: Wide landscape 16:10; aerial front camera angle; complete island centered and fully visible with comfortable background margins. Show walkable floors and clear separation between jacuzzi, cinema lounge, terrace, and barbecue.
+Lighting/mood: Nighttime, warm welcoming lights, soft pool glow, balanced cinematic illumination.
+Color palette: Coherent deep navy, cyan and electric lime-yellow accents with warm wood and greenery.
+Constraints: No people, no lettering, no UI, no text, no logos, no watermark. The cinema screen is blank luminous light. Exactly one image.

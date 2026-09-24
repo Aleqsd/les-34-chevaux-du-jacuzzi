@@ -1,0 +1,14 @@
+Use case: stylized-concept
+Asset type: avatar sprite atlas for a cookie-clicker game, six original unlockable kawaii pastry companion portraits.
+Primary request: Exactly SIX avatars arranged in a precise 3-column by 2-row grid on one landscape image, 1536 by 1024 pixels, each cell exactly 512 by 512 pixels. Pastel round sticker style, simple clean illustrated mascot portraits.
+Composition/framing: Equal cells and consistent scale. Each avatar is centered in its own cell with safe inner margin of at least 52 pixels from every cell edge. Each portrait consists of one pastry character face on one pastel circle, with a tidy white sticker rim around the circle. The circle and all character details stay entirely inside the cell. No elements crossing cells. Plain white interstitial background, no grid lines or borders.
+Exact grid order, left to right:
+Top-left: chocolate chip cookie face on a warm caramel pastel circle.
+Top-middle: strawberry donut face on a pink pastel circle.
+Top-right: happy croissant face on a pale butter yellow pastel circle.
+Bottom-left: adorable cupcake with sprinkles on a lilac pastel circle.
+Bottom-middle: smiling macaron face on a mint pastel circle.
+Bottom-right: royal chocolate-cookie face with a tiny golden crown on a cyan pastel circle.
+Style/medium: Cohesive kawaii pastel sticker illustration, rounded shapes, clean softly weighted outlines, gentle soft shading, expressive large sparkling eyes, tiny rosy blush on each character, charming small mouths. Carefully balanced distinctive silhouettes and visible pastry details. Suitable at small avatar size.
+Color palette: Warm bakery colors paired with soft caramel, pink, butter yellow, lilac, mint and cyan circles.
+Constraints: Exactly six icons; one icon per cell; no text, no lettering, no UI, no numbers, no labels, no separators, no watermark. Preserve the exact requested grid order. Generate one image only.

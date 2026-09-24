@@ -30,8 +30,9 @@ export async function GET() {
       db.prepare("SELECT id,author,title,body,created FROM feature_ideas ORDER BY created DESC,id"),
       db.prepare("SELECT id,idea_id AS ideaId,author,body,created FROM idea_comments ORDER BY created,id"),
       db.prepare("SELECT author_key AS authorKey,author,peak_votes AS peakVotes FROM crew_progress"),
+      db.prepare("SELECT author_key AS authorKey,author,json_extract(data,'$.lifetime') AS lifetime,json_extract(data,'$.clicks') AS clicks,json_extract(data,'$.prestige') AS prestige FROM cookie_players"),
     ]);
-    return Response.json({ proposals: (result[0].results as Record<string,unknown>[]).map(p => ({ ...p, movie: p.movie ? JSON.parse(p.movie as string) : null })), votes: result[1].results, slots: result[2].results, activityDetails:result[3].results, comments:result[4].results, plans:result[5].results, participants:result[6].results, profiles:result[7].results, featureIdeas:result[8].results,ideaComments:result[9].results,progress:result[10].results }, { headers: { "Cache-Control": "no-store" } });
+    return Response.json({ proposals: (result[0].results as Record<string,unknown>[]).map(p => ({ ...p, movie: p.movie ? JSON.parse(p.movie as string) : null })), votes: result[1].results, slots: result[2].results, activityDetails:result[3].results, comments:result[4].results, plans:result[5].results, participants:result[6].results, profiles:result[7].results, featureIdeas:result[8].results,ideaComments:result[9].results,progress:result[10].results,cookieProgress:result[11].results }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) { console.error("club:read", error); return Response.json({ error: "Impossible de charger le QG. Réessaie dans un instant." }, { status: 503 }); }
 }
 export async function POST(request: Request) {

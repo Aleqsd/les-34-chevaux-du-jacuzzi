@@ -85,6 +85,13 @@
       "when": 1790245104637,
       "tag": "0011_old_war_machine",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "6",
+      "when": 1790247866127,
+      "tag": "0012_giant_redwing",
+      "breakpoints": true
     }
   ]
 }

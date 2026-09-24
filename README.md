@@ -8,8 +8,8 @@ Le QG du séjour du **20 au 27 septembre 2026**, pour Alex, Bimbo, Penelop, Telr
 
 ## Dans le jacuzzi
 
-- Villa 3D navigable : salon cinéma, terrasse et jacuzzi avec cheval chromé. Caméras animées, navigation par clic ou clavier, illustration de repli. Les scènes Three.js sont chargées à la demande et arrêtées hors écran ou en arrière-plan.
-- Onze cartes holographiques à retourner avec les contributions par prénom. 60 avatars kawaii au choix, ou image HTTPS personnalisée. Vestiaire partagé : chapeaux, lunettes, bouée, positions réglables par glissement ou flèches, poignées de redimensionnement de 50 à 180 %, proportions libres ou verrouillées et rotation directe, recentrage, danses au survol et réactions aux votes. Animations désactivables et respect du mouvement réduit.
+- Île-jardin 3D interactive : salon cinéma, pergola, terrasse, végétation, cascade et jacuzzi avec cheval chromé. Orbite et zoom, objets cliquables, jets, fête, jour/nuit et bond du cheval ; gestes partagés (danse, coucou) et ambiance locale. Caméras animées, navigation par clic ou clavier, illustration de repli. Les scènes Three.js sont chargées à la demande et arrêtées hors écran ou en arrière-plan.
+- Onze cartes holographiques à retourner avec les contributions par prénom. 60 avatars kawaii libres et 6 avatars exclusifs à gagner dans l’Arcade, ou image HTTPS personnalisée. Vestiaire partagé : chapeaux, lunettes, bouée, positions réglables par glissement ou flèches, poignées de redimensionnement de 50 à 180 %, proportions libres ou verrouillées et rotation directe, recentrage, danses au survol et réactions aux votes. Animations désactivables et respect du mouvement réduit.
 - Salle de cinéma 3D pour chaque séance retenue : les personnes qui confirment leur présence prennent place avec leur avatar et leurs accessoires. Les votes ne valent jamais confirmation de présence.
 - Cinéma : sélection en premier, Tous les films par défaut, tri par likes, recherche TMDB rapide en français, affiches, année, genres, durée, réalisation. Aucun synopsis ni bande-annonce. Ajout manuel possible.
 - Votes pour/neutre/contre avec détail nominatif : un seul vote par prénom et par proposition ou créneau. Changer d’avis remplace le précédent choix. La casse, les espaces autour du prénom et les variantes Unicode équivalentes sont normalisés.
@@ -24,6 +24,9 @@ Le QG du séjour du **20 au 27 septembre 2026**, pour Alex, Bimbo, Penelop, Telr
 - QG vivant : avatars synchronisés toutes les 5 secondes, déplacements entre les pièces, promenade, position assise et bain. Heartbeat de 15 secondes, expiration après 60 secondes ; les onglets masqués ne sollicitent pas la présence.
 - Prochaine activité en aperçu sur l’accueil, avec horaire et compte à rebours. Les rendez-vous retenus ont priorité sur le créneau initial de la même activité.
 - Classement des 11 membres par votes et accessoires à 3, 7, 12, 20 et 34 votes. Le record est permanent ; changer un vote ne multiplie pas les points. Les votes existants sont repris. Page Récompenses avec collection, paliers et replay de chaque animation ; les succès non vus se révèlent à la visite, avec suivi local par prénom/appareil.
+- Cookie Jacuzzi : 10 bâtiments, achats ×1/×10/×100, 20 améliorations, 12 objectifs rémunérés et 30 succès permanents. Bonus doré, production hors ligne limitée à 8 h et prestige cumulatif (+10 % par étoile). Six avatars gourmands à débloquer, révélations automatiques et replay. Sauvegarde serveur par prénom, requêtes idempotentes et reprise des actions en attente sur le même navigateur.
+- Classement Cookie indépendant : podium, cookies produits au total, clics, prestige et position personnelle ; tri par production historique, puis clics et prénom. Les dépenses et prestiges ne font pas baisser le score. Les trophées de votes restent dans Récompenses ; succès et avatars du jeu restent dans Arcade.
+- Badge DEV exclusif à Alex, y compris dans les scènes 3D.
 - Stockage partagé D1. Actualisation toutes les 15 secondes quand la page est visible et après les actions. Identité libre par prénom.
 - Interface mobile, clavier, réduction des animations et image de repli sans WebGL.
 
@@ -48,6 +51,7 @@ node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1
 node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0009_secret_sway.sql
 node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0010_amused_blue_marvel.sql
 node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0011_old_war_machine.sql
+node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0012_giant_redwing.sql
 npm run dev
 ```
 
@@ -64,7 +68,10 @@ node scripts/verify-social.mjs
 node scripts/verify-event-edits.mjs
 node scripts/verify-votes.mjs
 node scripts/verify-immersive.mjs
+node scripts/verify-cookie.mjs
 ```
+
+Le test Cookie utilise uniquement localhost et le prénom de fixture TestCookie : concurrence, reprise idempotente, achats, bonus, production hors ligne, prestige, avatars verrouillés et classement.
 
 Les tests refusent une URL hors localhost/127.0.0.1 et créent des fixtures sous **Test API** en local. Ils couvrent recherche TMDB, propositions, URL et dates, votes uniques et concurrents, normalisation des prénoms, nettoyage historique, alternatives, édition collaborative, commentaires, fiches pratiques, rendez-vous, présences, avatars et rejet des écritures d’une autre origine.
 

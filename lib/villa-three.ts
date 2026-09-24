@@ -1,40 +1,32 @@
-import { THREE,box,material,sceneRuntime,screenTexture } from "@/lib/scene-runtime";
-import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { THREE,box,sceneRuntime } from "@/lib/scene-runtime";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { villaPresence } from "@/lib/villa-presence";
+import { makeVillaMap,VILLA_ACTION_LABELS,type VillaAction,type VillaAmbience } from "@/lib/villa-map";
 export type VillaZone="villa"|"cinema"|"terrace"|"jacuzzi";
-export function buildVilla(host:HTMLDivElement,onZone:(zone:VillaZone)=>void,onContextChange:(ready:boolean)=>void){
-  const rt=sceneRuntime(host,onContextChange),{scene,camera}=rt;
-  try{
-    scene.add(new THREE.HemisphereLight(0xb2d6ff,0x192344,3));const sun=new THREE.DirectionalLight(0xe3ecff,5);sun.position.set(0,12,8);scene.add(sun);const blue=new THREE.PointLight(0x3a65ff,100,24);blue.position.set(-5,4,-2);scene.add(blue);const warm=new THREE.PointLight(0xffcf8c,65,16);warm.position.set(4,4,-3);scene.add(warm);
-    const villa=new THREE.Group();scene.add(villa);const ivory=material(0x8196b2,.15,.55),navy=material(0x13254b,.4,.3),wood=material(0x735844,.1,.7),chrome=material(0xaab9d0,.85,.18),lime=material(0xdfff00,.2,.3),dark=material(0x080f20,.4,.4);
-    box(villa,[16,.65,10],[0,-.55,0],dark);box(villa,[16.1,.08,10.1],[0,-.85,0],new THREE.MeshBasicMaterial({color:0x315bda}));box(villa,[7,.12,8],[-4,-.15,0],ivory);
-    for(let i=0;i<21;i++)box(villa,[.37,.15,8],[.3+i*.36,-.12,-.3],wood);
-    box(villa,[7,3.6,.2],[-4,1.65,-4],ivory);box(villa,[.2,3.6,8],[-7.5,1.65,0],ivory);box(villa,[7.3,.2,.7],[-4,3.48,-3.8],navy);
-    for(let i=0;i<16;i++)box(villa,[.1,2.8,.1],[-7.28,1.7,-3.5+i*.45],navy);
-    const screenMat=new THREE.MeshBasicMaterial({map:screenTexture(rt,"LE SALON DU CREW","11 amis · Une séance à inventer")});box(villa,[4.9,2.5,.16],[-3.9,1.85,-3.78],dark);box(villa,[4.65,2.26,.18],[-3.9,1.85,-3.67],screenMat);
-    for(const z of [0,2.1]){box(villa,[4.7,.45,1.45],[-4,.37,z],navy);box(villa,[4.7,.88,.28],[-4,.79,z+.62],navy);for(let i=0;i<3;i++)box(villa,[1.43,.25,1.1],[-5.52+i*1.51,.67,z-.1],material(0x31518b,.1,.85));for(const x of [-6.5,-1.5])box(villa,[.27,.8,1.6],[x,.66,z],navy);}
-    // Terrace table, four chairs, warm pendant and slatted rear screen.
-    box(villa,[3.5,.17,1.55],[3.8,.98,-2.7],ivory);for(const x of [2.4,5.2])for(const z of [-3.25,-2.2])box(villa,[.12,1,.12],[x,.43,z],chrome);
-    for(const x of [2.6,4.9])for(const z of [-4,-1.4]){box(villa,[.8,.18,.8],[x,.55,z],navy);box(villa,[.8,.8,.13],[x,.95,z+(z<-2?-.35:.35)],navy);for(const dx of [-.3,.3])for(const dz of [-.3,.3])box(villa,[.07,.65,.07],[x+dx,.2,z+dz],chrome);}
-    for(let i=0;i<19;i++)box(villa,[.14,2.65,.14],[.7+i*.37,1.14,-4.6],wood);box(villa,[7.2,.1,.18],[4,2.46,-4.6],chrome);
-    const pendant=new THREE.Mesh(new THREE.SphereGeometry(.32,16,12),new THREE.MeshBasicMaterial({color:0xffd6a3}));pendant.position.set(3.8,2.9,-2.7);villa.add(pendant);box(villa,[.035,1,.035],[3.8,3.65,-2.7],chrome);
-    const pool=new THREE.Group();pool.position.set(4,.05,2.4);villa.add(pool);const basin=new THREE.Mesh(new THREE.CylinderGeometry(2.45,2.3,.85,64),navy);basin.position.y=.1;pool.add(basin);const rim=new THREE.Mesh(new THREE.TorusGeometry(2.35,.17,12,64),chrome);rim.rotation.x=Math.PI/2;rim.position.y=.55;pool.add(rim);
-    const waterMat=new THREE.MeshStandardMaterial({color:0x159bd8,metalness:.55,roughness:.15,transparent:true,opacity:.88});const water=new THREE.Mesh(new THREE.CircleGeometry(2.22,64),waterMat);water.rotation.x=-Math.PI/2;water.position.y=.53;pool.add(water);
-    const ripples:THREE.Mesh[]=[];for(let i=0;i<4;i++){const ring=new THREE.Mesh(new THREE.TorusGeometry(.8+i*.4,.017,5,64),new THREE.MeshBasicMaterial({color:0x9eefff,transparent:true,opacity:.27}));ring.rotation.x=Math.PI/2;ring.position.y=.55;pool.add(ring);ripples.push(ring);}
-    const floaty=new THREE.Group();floaty.position.y=.64;pool.add(floaty);const ring=new THREE.Mesh(new THREE.TorusGeometry(.81,.21,12,48),lime);ring.rotation.x=Math.PI/2;floaty.add(ring);
-    new GLTFLoader().load('/horse.glb',gltf=>{if(rt.disposed){gltf.scene.traverse(o=>{if(o instanceof THREE.Mesh){o.geometry.dispose();(Array.isArray(o.material)?o.material:[o.material]).forEach(m=>m.dispose());}});return;}const horse=gltf.scene,bb=new THREE.Box3().setFromObject(horse),sz=bb.getSize(new THREE.Vector3()),center=bb.getCenter(new THREE.Vector3()),scale=2.9/Math.max(sz.x,sz.y,sz.z);horse.scale.setScalar(scale);horse.position.set(-center.x*scale,-bb.min.y*scale-.9,-center.z*scale);horse.rotation.y=-.8;horse.traverse(o=>{if(o instanceof THREE.Mesh){(Array.isArray(o.material)?o.material:[o.material]).forEach(m=>m.dispose());o.material=chrome;}});floaty.add(horse);rt.draw();},undefined,()=>{});
-    for(const [x,z] of [[-6.8,4.1],[.1,-4.1],[7.2,4.2]]){const pot=new THREE.Mesh(new THREE.CylinderGeometry(.4,.3,.6,12),ivory);pot.position.set(x,.2,z);villa.add(pot);for(let i=0;i<5;i++){const leaf=new THREE.Mesh(new THREE.SphereGeometry(.34,10,8),material(0x357b63,0,.75));leaf.scale.set(.65,1.7,.7);leaf.position.set(x+Math.cos(i*2.4)*.22,.88,z+Math.sin(i*2.4)*.22);leaf.rotation.z=Math.cos(i)*.45;villa.add(leaf);}}
-    const proxies:THREE.Mesh[]=[];for(const [zone,size,pos] of [["cinema",[6.6,.12,7.6],[-4,0,0]],["terrace",[7,.12,4],[3.8,0,-2.5]],["jacuzzi",[5,.12,5],[4,.56,2.5]]] as [VillaZone,number[],number[]][]){const proxy=box(villa,size,pos,new THREE.MeshBasicMaterial({color:zone==="cinema"?0x647aff:0xdfff00,transparent:true,opacity:0,depthWrite:false}));proxy.userData.zone=zone;proxies.push(proxy);}
-    const presets:Record<VillaZone,{position:number[];target:number[]}>= {villa:{position:[11.8,12.2,16.1],target:[0,.6,0]},cinema:{position:[-1,6.5,8],target:[-4,1,-1]},terrace:{position:[9,7,4],target:[3.6,.7,-2.6]},jacuzzi:{position:[9.2,6.2,8.8],target:[4,.65,2.4]}};
-    let zone:VillaZone="villa",progress=1,elapsed=0;const from=new THREE.Vector3(),fromTarget=new THREE.Vector3(),target=new THREE.Vector3(),desired=new THREE.Vector3(),look=new THREE.Vector3(0,.6,0);camera.position.fromArray(presets.villa.position);target.copy(look);desired.copy(camera.position);camera.lookAt(look);
-    function setZone(next:VillaZone){zone=next;from.copy(camera.position);fromTarget.copy(look);desired.fromArray(presets[next].position);target.fromArray(presets[next].target);if(next==="villa"){const factor=Math.max(1,1.5/camera.aspect);desired.sub(target).multiplyScalar(factor).add(target);}progress=0;elapsed=0;proxies.forEach(p=>(p.material as THREE.MeshBasicMaterial).opacity=p.userData.zone===next?.055:0);rt.draw();}
-    const ray=new THREE.Raycaster(),mouse=new THREE.Vector2();let down:{x:number;y:number}|null=null;
-    const hit=(e:PointerEvent)=>{const r=host.getBoundingClientRect();mouse.set((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1);ray.setFromCamera(mouse,camera);return ray.intersectObjects(proxies)[0]?.object as THREE.Mesh|undefined;};
-    const pointerDown=(e:PointerEvent)=>{down={x:e.clientX,y:e.clientY};};const pointerUp=(e:PointerEvent)=>{if(down&&Math.hypot(e.clientX-down.x,e.clientY-down.y)<8){const object=hit(e);if(object)onZone(object.userData.zone);}down=null;};const pointerMove=(e:PointerEvent)=>{host.style.cursor=hit(e)?"pointer":"default";};
-    host.addEventListener('pointerdown',pointerDown);host.addEventListener('pointerup',pointerUp);host.addEventListener('pointermove',pointerMove);rt.addCleanup(()=>{host.removeEventListener('pointerdown',pointerDown);host.removeEventListener('pointerup',pointerUp);host.removeEventListener('pointermove',pointerMove);});
-    const people=villaPresence(rt);
-    rt.onResize=()=>setZone(zone);
-    rt.update=(time,dt)=>{people.tick(time,dt);if(progress<1){elapsed+=dt;progress=rt.motion.matches?1:Math.min(1,elapsed/.85);const easing=progress*progress*(3-2*progress);camera.position.lerpVectors(from,desired,easing);look.lerpVectors(fromTarget,target,easing);}camera.lookAt(look);if(!rt.motion.matches){floaty.position.y=.64+Math.sin(time*1.1)*.06;floaty.rotation.z=Math.sin(time*.8)*.025;ripples.forEach((r,i)=>{r.scale.setScalar(1+Math.sin(time*1.4+i)*.025);});}else{floaty.position.y=.64;floaty.rotation.z=0;}};
-    rt.draw();return {setZone,updatePresence:people.update,dispose:rt.dispose};
-  }catch(error){rt.dispose();throw error;}
+export function buildVilla(host:HTMLDivElement,onZone:(zone:VillaZone)=>void,onContextChange:(ready:boolean)=>void,onAction:(action:VillaAction)=>void,onHover:(label:string)=>void){
+ const rt=sceneRuntime(host,onContextChange),{camera,renderer}=rt;
+ try{
+  rt.scene.environmentIntensity=.35;renderer.toneMappingExposure=1.08;renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+  const map=makeVillaMap(rt),people=villaPresence(rt),controls=new OrbitControls(camera,renderer.domElement);
+  controls.enablePan=false;controls.enableDamping=false;controls.enableZoom=false;controls.minPolarAngle=.3;controls.maxPolarAngle=1.35;controls.minDistance=6;controls.maxDistance=65;
+  let interactive=host.clientWidth>700;controls.enabled=interactive;renderer.domElement.style.touchAction=interactive?"none":"pan-y";
+  const presets:Record<VillaZone,{position:number[];target:number[]}>= {villa:{position:[14,16,20],target:[0,.3,0]},cinema:{position:[-1,7,9],target:[-4,1,-1]},terrace:{position:[10,8,5],target:[3.6,1,-2.6]},jacuzzi:{position:[9.4,6.8,9.4],target:[4,.65,2.4]}};
+  let zone:VillaZone="villa",progress=1,elapsed=0,clock=0,inFrame=false,manualView=false;const from=new THREE.Vector3(),fromTarget=new THREE.Vector3(),desired=new THREE.Vector3(),target=new THREE.Vector3();
+  camera.position.fromArray(presets.villa.position);controls.target.fromArray(presets.villa.target);controls.update();
+  const proxies:THREE.Mesh[]=[];for(const [z,size,pos] of [["cinema",[7.5,.1,7.7],[-4.2,.12,-.5]],["terrace",[6.8,.1,4.9],[3.9,.12,-2.45]],["jacuzzi",[4.7,.1,4.7],[4,.6,2.4]]] as [VillaZone,number[],number[]][]){const p=box(map.group,size,pos,new THREE.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false}));p.userData.zone=z;proxies.push(p);}
+  function setZone(next:VillaZone){manualView=false;zone=next;from.copy(camera.position);fromTarget.copy(controls.target);target.fromArray(presets[next].target);desired.fromArray(presets[next].position);const factor=Math.max(1,(next==="villa"?1.4:.85)/camera.aspect);desired.sub(target).multiplyScalar(factor).add(target);progress=0;elapsed=0;rt.draw();}
+  const changed=()=>{if(!inFrame)rt.draw();},started=()=>{progress=1;manualView=true;};controls.addEventListener("change",changed);controls.addEventListener("start",started);
+  const ray=new THREE.Raycaster(),mouse=new THREE.Vector2();let down:{x:number;y:number;id:number;moved:boolean}|null=null,hover="";
+  const label=(value:string)=>{if(hover!==value){hover=value;onHover(value);}};
+  const hit=(event:PointerEvent)=>{const r=host.getBoundingClientRect();mouse.set((event.clientX-r.left)/r.width*2-1,-(event.clientY-r.top)/r.height*2+1);ray.setFromCamera(mouse,camera);const object=ray.intersectObjects(map.picks,false)[0]?.object;let owner:THREE.Object3D|null=object??null;while(owner&&!owner.userData.action)owner=owner.parent;if(owner)return {action:owner.userData.action as VillaAction};const proxy=ray.intersectObjects(proxies,false)[0]?.object;return proxy?{zone:proxy.userData.zone as VillaZone}:null;};
+  const pointerDown=(event:PointerEvent)=>{if(down){down.moved=true;return;}down={x:event.clientX,y:event.clientY,id:event.pointerId,moved:false};};
+  const pointerMove=(event:PointerEvent)=>{if(down&&Math.hypot(event.clientX-down.x,event.clientY-down.y)>7)down.moved=true;const h=hit(event);host.style.cursor=down&&interactive?"grabbing":h?"pointer":interactive?"grab":"default";label(down?.moved?"":h?.action?VILLA_ACTION_LABELS[h.action]:h?.zone?"Visiter cet espace":"");};
+  const pointerUp=(event:PointerEvent)=>{if(down&&down.id===event.pointerId&&!down.moved){const h=hit(event);if(h?.action)onAction(h.action);else if(h?.zone)onZone(h.zone);}down=null;};
+  const cancel=()=>{down=null;label("");};host.addEventListener("pointerdown",pointerDown);host.addEventListener("pointermove",pointerMove);host.addEventListener("pointerup",pointerUp);host.addEventListener("pointercancel",cancel);host.addEventListener("pointerleave",cancel);
+  rt.addCleanup(()=>{controls.removeEventListener("change",changed);controls.removeEventListener("start",started);controls.dispose();host.removeEventListener("pointerdown",pointerDown);host.removeEventListener("pointermove",pointerMove);host.removeEventListener("pointerup",pointerUp);host.removeEventListener("pointercancel",cancel);host.removeEventListener("pointerleave",cancel);});
+  rt.onResize=()=>{if(!manualView)setZone(zone);};
+  rt.update=(time,dt)=>{inFrame=true;clock=time;people.tick(time,dt);map.tick(time);if(progress<1){elapsed+=dt;progress=rt.motion.matches?1:Math.min(1,elapsed/.9);const e=progress*progress*(3-2*progress);camera.position.lerpVectors(from,desired,e);controls.target.lerpVectors(fromTarget,target,e);}controls.update();inFrame=false;};
+  setZone("villa");
+  return {setZone,updatePresence:people.update,setAmbience:map.setAmbience,jump:()=>map.jump(clock),setInteractive:(enabled:boolean)=>{interactive=enabled;controls.enabled=enabled;renderer.domElement.style.touchAction=enabled?"none":"pan-y";},zoom:(factor:number)=>{progress=1;manualView=true;const v=camera.position.clone().sub(controls.target);v.setLength(THREE.MathUtils.clamp(v.length()*factor,6,65));camera.position.copy(controls.target).add(v);controls.update();rt.draw();},dispose:rt.dispose};
+ }catch(error){rt.dispose();throw error;}
 }

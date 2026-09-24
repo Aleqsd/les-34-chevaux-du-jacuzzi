@@ -3,7 +3,7 @@ import { avatarTexture } from "@/lib/avatar-texture";
 import type { Profile } from "@/lib/club";
 import type { PresenceMember } from "@/lib/presence";
 type Actor={group:THREE.Group;head:THREE.Sprite;label:THREE.Sprite;member:PresenceMember;index:number;seed:number;version:number;signature:string;walking:boolean;via:boolean};
-function nameTexture(rt:SceneRuntime,name:string){const canvas=document.createElement("canvas");canvas.width=512;canvas.height=96;const ctx=canvas.getContext("2d")!;ctx.fillStyle="#091427dd";ctx.beginPath();ctx.roundRect(3,3,506,90,35);ctx.fill();ctx.strokeStyle="#dfff0090";ctx.lineWidth=3;ctx.stroke();ctx.fillStyle="#f0f5ff";ctx.font="600 37px sans-serif";ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText(name,256,49,475);return rt.track(new THREE.CanvasTexture(canvas));}
+function nameTexture(rt:SceneRuntime,name:string){const canvas=document.createElement("canvas");canvas.width=512;canvas.height=96;const ctx=canvas.getContext("2d")!;ctx.fillStyle="#091427dd";ctx.beginPath();ctx.roundRect(3,3,506,90,35);ctx.fill();ctx.strokeStyle="#dfff0090";ctx.lineWidth=3;ctx.stroke();ctx.fillStyle="#f0f5ff";ctx.font="600 37px sans-serif";ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText(name+(name.trim().toLowerCase()==="alex"?" · DEV":""),256,49,475);return rt.track(new THREE.CanvasTexture(canvas));}
 export function villaPresence(rt:SceneRuntime){
   const actors=new Map<string,Actor>();const crowd=new THREE.Group();rt.scene.add(crowd);
   const remove=(key:string)=>{const a=actors.get(key);if(!a)return;a.version++;crowd.remove(a.group);for(const sprite of [a.head,a.label]){rt.release(sprite.material.map);sprite.material.dispose();}actors.delete(key);};
@@ -21,14 +21,15 @@ export function villaPresence(rt:SceneRuntime){
     if(room==="cinema")goal.set(-5.52+(i%3)*1.51,1.27,Math.floor(i/3)*1.35-.1);
     else if(room==="terrace")goal.set(i%2?4.9:2.6,1.18,-4+Math.floor(i/2)*1.05);
     else if(room==="jacuzzi"){const angle=(i*.8)+a.seed;goal.set(4+Math.cos(angle)*1.48,1.1,2.4+Math.sin(angle)*1.48);}
-    else if(action==="sit")goal.set(-1+(i%3)*.7,1.05,2+Math.floor(i/3)*.6);
+    else if(action!=="walk")goal.set(-1+(i%3)*.7,1.05,2+Math.floor(i/3)*.6);
     else goal.set(-.4+Math.cos(phase)*.65,1.12,2.5+Math.sin(phase)*.8);
     if(walk&&room!=="jacuzzi"){goal.y=1.18;if(room==="cinema"){goal.x=-5+Math.cos(phase)*1.7;goal.z=3.25+Math.sin(phase)*.35;}if(room==="terrace"){goal.x=2.7+Math.cos(phase)*1.5;goal.z=-.55+Math.sin(phase)*.4;}}
     if(a.via){goal.set(-.3,1.18,2.7);if(a.group.position.distanceTo(goal)<.2)a.via=false;}
     const distance=a.group.position.distanceTo(goal);a.walking=distance>.08;
     if(rt.motion.matches){a.group.position.copy(goal);a.via=false;}else a.group.position.lerp(goal,Math.min(1,dt*(a.walking?2.2:5)));
-    a.head.position.y=rt.motion.matches?0:Math.sin(time*(a.walking?9:2)+a.seed)*(a.walking?.055:.018);
-    a.head.material.rotation=rt.motion.matches?0:Math.sin(time*(a.walking?7:1.3)+a.seed)*(a.walking?.055:.015);
+    const beat=(Date.now()-a.member.changed)/1000;
+    a.head.position.y=rt.motion.matches?0:action==="dance"?Math.abs(Math.sin(beat*5))*.22:Math.sin(time*(a.walking?9:2)+a.seed)*(a.walking?.055:.018);
+    a.head.material.rotation=rt.motion.matches?0:action==="wave"?Math.sin(beat*7)*.23:action==="dance"?Math.sin(beat*5)*.15:Math.sin(time*(a.walking?7:1.3)+a.seed)*(a.walking?.055:.015);
     a.label.position.y=.62+a.head.position.y;
   }}
   return {update,tick};

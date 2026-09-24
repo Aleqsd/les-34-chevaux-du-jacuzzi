@@ -12,7 +12,11 @@ GitHub mark from [Simple Icons](https://github.com/simple-icons/simple-icons), d
 
 ## Villa illustration
 
-The villa fallback illustration is original ImageGen artwork. Its generation prompt is recorded in docs/villa-night.prompt.txt. The interactive villa and cinema use original procedural Three.js geometry.
+The villa fallback illustrations are original ImageGen artwork. Generation prompts are recorded in docs/villa-night.prompt.txt and docs/villa-island.prompt.txt. The interactive villa and cinema use original procedural Three.js geometry.
+
+## Cookie Jacuzzi artwork
+
+`public/cookie-avatars.webp` contains six original ImageGen pastry characters. The generation prompt is recorded in `docs/cookie-avatars.prompt.txt`. The first character is also used for the clickable cookie.
 
 ## Emojis uniformes
 

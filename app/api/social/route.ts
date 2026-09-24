@@ -1,3 +1,4 @@
+import { COOKIE_AVATARS } from "@/lib/cookie-game";
 import { database } from "@/lib/database";
 import { z } from "zod";
 import { isActivityEmoji } from "@/lib/activity-emoji";
@@ -59,6 +60,7 @@ export async function POST(request:Request){
     }
     if(p.action==="profile"){
       const key=p.author.normalize("NFKC").toLocaleLowerCase("fr");
+      const avatarReward=COOKIE_AVATARS.find(a=>a.index===p.avatar);if(avatarReward){const game=await db.prepare("SELECT json_extract(data,'$.lifetime') AS lifetime FROM cookie_players WHERE author_key=?").bind(key).first<{lifetime:number}>();if((game?.lifetime??0)<avatarReward.threshold)throw new Error("Choisis un avatar débloqué dans Cookie Jacuzzi.");}
       const needed=Math.max(requiredVotes("hat",p.hat||"none"),requiredVotes("accessory",p.accessory||"none"));
       if(needed){const earned=await db.prepare("SELECT peak_votes FROM crew_progress WHERE author_key=?").bind(key).first<{peak_votes:number}>();if((earned?.peak_votes??0)<needed)throw new Error(`Choisis un accessoire débloqué : celui-ci demande ${needed} votes.`);}
       const accessory=p.accessory??null;

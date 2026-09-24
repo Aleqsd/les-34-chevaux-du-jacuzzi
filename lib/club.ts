@@ -13,8 +13,9 @@ export type Profile = { authorKey:string; author:string; avatar:number; imageUrl
 export type FeatureIdea={id:string;author:string;title:string;body:string;created:string};
 export type CrewProgress={authorKey:string;author:string;peakVotes:number};
 export type IdeaComment={id:string;ideaId:string;author:string;body:string;created:string};
-export type ClubState = { progress:CrewProgress[]; ideaComments:IdeaComment[]; proposals: Proposal[]; votes: Vote[]; slots: Slot[]; activityDetails:ActivityDetails[]; comments:Comment[]; plans:SelectedPlan[]; participants:Participant[]; profiles:Profile[]; featureIdeas:FeatureIdea[] };
-export const EMPTY_STATE: ClubState = { progress:[],ideaComments:[], proposals: [], votes: [], slots: [], activityDetails:[], comments:[], plans:[], participants:[], profiles:[], featureIdeas:[] };
+export type CookieStanding={authorKey:string;author:string;lifetime:number;clicks:number;prestige:number};
+export type ClubState = { cookieProgress:CookieStanding[]; progress:CrewProgress[]; ideaComments:IdeaComment[]; proposals: Proposal[]; votes: Vote[]; slots: Slot[]; activityDetails:ActivityDetails[]; comments:Comment[]; plans:SelectedPlan[]; participants:Participant[]; profiles:Profile[]; featureIdeas:FeatureIdea[] };
+export const EMPTY_STATE: ClubState = { cookieProgress:[], progress:[],ideaComments:[], proposals: [], votes: [], slots: [], activityDetails:[], comments:[], plans:[], participants:[], profiles:[], featureIdeas:[] };
 export function score(votes: Vote[], id: string, slot:boolean|"idea" = false) {
   const list = votes.filter(v => slot==="idea"?v.ideaId===id:slot ? v.slotId === id : v.proposalId === id);
   return { yes: list.filter(v => v.value === 1).length, no: list.filter(v => v.value === -1).length, neutral:list.filter(v=>v.value===0).length, list };

@@ -10,6 +10,8 @@ import { ActivityEmojiBadge, ActivityEmojiPicker, ActivityEmojiEditor } from "@/
 import { VillaScene } from "@/components/villa-scene";
 import { CinemaLounge } from "@/components/cinema-lounge";
 import { DeleteMovie } from "@/components/delete-movie";
+import { CookieGame } from "@/components/cookie-game";
+import { Cookie } from "lucide-react";
 import { NextActivity } from "@/components/next-activity";
 import { CrewLeaderboard } from "@/components/crew-leaderboard";
 import { UnlockCelebration } from "@/components/unlock-celebration";
@@ -108,7 +110,7 @@ export default function Club() {
   useEffect(()=>{if(movieFeedback?.kind==="success"){movieConfirmation.current?.focus({preventScroll:true});movieConfirmation.current?.scrollIntoView({behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"instant":"smooth",block:"center"});}},[movieFeedback]);
   const load = useCallback(async () => {
     const request = ++refreshRequest.current;
-    try { const data = await api<ClubState>("/api/club"); if (request !== refreshRequest.current) return; setState(current=>({...EMPTY_STATE,...data,progress:(data.progress??[]).map(p=>({...p,peakVotes:Math.max(p.peakVotes,current.progress.find(old=>old.authorKey===p.authorKey)?.peakVotes??0)}))})); setLoadError(""); }
+    try { const data = await api<ClubState>("/api/club"); if (request !== refreshRequest.current) return; setState(current=>({...EMPTY_STATE,...data,cookieProgress:(data.cookieProgress??[]).map(p=>({...p,lifetime:Math.max(p.lifetime,current.cookieProgress.find(old=>old.authorKey===p.authorKey)?.lifetime??0)})),progress:(data.progress??[]).map(p=>({...p,peakVotes:Math.max(p.peakVotes,current.progress.find(old=>old.authorKey===p.authorKey)?.peakVotes??0)}))})); setLoadError(""); }
     catch(e) { if (request === refreshRequest.current) setLoadError((e as Error).message); }
     finally { if (request === refreshRequest.current) setLoaded(true); }
   },[]);
@@ -215,12 +217,12 @@ export default function Club() {
 
   return <AvatarContext.Provider value={state.profiles}>
     <ClubEffects/>
-    {transition&&<div className={`universe-transition to-${transition}`} aria-hidden="true"><span/><span/><b>{transition==="cinema"?"JACUZZI PICTURES":transition==="activities"?"ON SORT DU BAIN":transition==="ideas"?"LA BOÎTE À IDÉES":transition==="rewards"?"TES MOMENTS DE GLOIRE":"RETOUR AU QG"}</b></div>}
+    {transition&&<div className={`universe-transition to-${transition}`} aria-hidden="true"><span/><span/><b>{transition==="cinema"?"JACUZZI PICTURES":transition==="activities"?"ON SORT DU BAIN":transition==="ideas"?"LA BOÎTE À IDÉES":transition==="arcade"?"ON PRÉCHAUFFE LES FOURS":transition==="rewards"?"TES MOMENTS DE GLOIRE":"RETOUR AU QG"}</b></div>}
     <div className="ambient" aria-hidden="true"/>
     <Tabs value={view} onValueChange={goTo} className="app-shell">
       <header className="topbar">
         <a className="brand" href="/" aria-label="Les 34 Chevaux du Jacuzzi, accueil"><span className="brand-symbol">34<Waves size={27}/></span><span>LES 34 CHEVAUX<small>DU JACUZZI</small></span></a>
-        <TabsList className="main-nav"><TabsTrigger value="lobby"><Waves size={17}/>Le QG</TabsTrigger><TabsTrigger value="cinema"><Clapperboard size={17}/>Cinéma</TabsTrigger><TabsTrigger value="activities"><CalendarDays size={17}/>Programme</TabsTrigger><TabsTrigger value="ideas"><Lightbulb size={17}/>Idées</TabsTrigger><TabsTrigger value="rewards"><Trophy size={17}/>Récompenses</TabsTrigger></TabsList>
+        <TabsList className="main-nav"><TabsTrigger value="lobby"><Waves size={17}/>Le QG</TabsTrigger><TabsTrigger value="cinema"><Clapperboard size={17}/>Cinéma</TabsTrigger><TabsTrigger value="activities"><CalendarDays size={17}/>Programme</TabsTrigger><TabsTrigger value="ideas"><Lightbulb size={17}/>Idées</TabsTrigger><TabsTrigger value="rewards"><Trophy size={17}/>Récompenses</TabsTrigger><TabsTrigger value="arcade"><Cookie size={17}/>Arcade</TabsTrigger></TabsList>
         <div className="header-right"><button className="crew-stack" onClick={()=>{pendingAction.current=null;setIdentityOpen(true);}} aria-label="Les 11 membres du crew">{CREW.slice(0,3).map(n=><Avatar key={n} name={n} small/>)}<span>+8</span></button><button className="identity-button" onClick={()=>{pendingAction.current=null;setIdentityOpen(true);}}>{person?<><Avatar name={person} small/><span>{person}</span></>:<><Users size={16}/><span>Qui es-tu ?</span></>}<ChevronRight size={14}/></button></div>
       </header>
       <main>
@@ -286,6 +288,7 @@ export default function Club() {
         </TabsContent>
         <TabsContent value="ideas" className="view-panel"><FeatureIdeas {...social} renderVotes={id=>Votes({id,slot:"idea"})} loaded={loaded} error={loadError} onRetry={()=>void load()}/></TabsContent>
         <TabsContent value="rewards" className="view-panel"><RewardsPage person={person} peak={peak} currentVotes={state.votes.filter(v=>voterKey(v.author)===voterKey(person)).length} onReplay={unlocks.replay} onWardrobe={()=>identify(()=>setAvatarOpen(true))} onIdentify={()=>identify(()=>{})}/></TabsContent>
+        <TabsContent value="arcade" className="view-panel"><CookieGame person={person} identify={identify} onWardrobe={()=>identify(()=>setAvatarOpen(true))} standings={state.cookieProgress} onProgress={(author,player)=>{++refreshRequest.current;setState(current=>({...current,cookieProgress:[...current.cookieProgress.filter(p=>p.authorKey!==voterKey(author)),{authorKey:voterKey(author),author,lifetime:Math.max(player.lifetime,current.cookieProgress.find(p=>p.authorKey===voterKey(author))?.lifetime??0),clicks:player.clicks,prestige:player.prestige}]}));}}/></TabsContent>
         <CrewCards state={state}/>
         <footer><a className="footer-brand" href="/">LES 34 CHEVAUX DU JACUZZI <Waves size={19}/></a><a className="contribute-link" href="https://github.com/Aleqsd/les-34-chevaux-du-jacuzzi" target="_blank" rel="noopener noreferrer"><img className="github-mark" src="/github.svg" alt="" width={19} height={19}/>Code ouvert · Viens contribuer<ArrowUpRight size={15}/></a><a className="tmdb-credit" href="https://www.themoviedb.org" target="_blank" rel="noopener noreferrer"><img src="/tmdb.svg" alt="TMDB"/>Données cinéma</a><p>This product uses the TMDB API but is not endorsed or certified by TMDB.</p><p className="emoji-credit">Emojis : <a href="https://github.com/twitter/twemoji" target="_blank" rel="noopener noreferrer">Twemoji, Twitter et contributeurs</a> · <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">CC BY 4.0</a></p></footer>
       </main>
