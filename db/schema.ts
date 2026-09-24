@@ -32,4 +32,6 @@ export const selectedPlans = sqliteTable("selected_plans", {
 export const planParticipants = sqliteTable("plan_participants", {
   planId:text("plan_id").notNull().references(()=>selectedPlans.id), authorKey:text("author_key").notNull(), author:text("author").notNull(), attending:integer("attending").notNull(),
 },t=>[primaryKey({columns:[t.planId,t.authorKey]})]);
-export const profiles=sqliteTable("profiles",{authorKey:text("author_key").primaryKey(),author:text("author").notNull(),avatar:integer("avatar").notNull(),imageUrl:text("image_url").notNull().default(""),hat:text("hat").notNull().default("none"),eyewear:text("eyewear").notNull().default("none"),floatie:integer("floatie").notNull().default(0),animated:integer("animated").notNull().default(1)});
+export const profiles=sqliteTable("profiles",{authorKey:text("author_key").primaryKey(),author:text("author").notNull(),avatar:integer("avatar").notNull(),imageUrl:text("image_url").notNull().default(""),hat:text("hat").notNull().default("none"),eyewear:text("eyewear").notNull().default("none"),floatie:integer("floatie").notNull().default(0),animated:integer("animated").notNull().default(1),positions:text("accessory_positions").notNull().default("{}")});
+
+export const featureIdeas=sqliteTable("feature_ideas",{id:text("id").primaryKey(),author:text("author").notNull(),title:text("title").notNull(),body:text("body").notNull().default(""),created:text("created").notNull()});

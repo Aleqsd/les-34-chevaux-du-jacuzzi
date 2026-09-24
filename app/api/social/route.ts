@@ -4,14 +4,17 @@ import { isActivityEmoji } from "@/lib/activity-emoji";
 import { HATS, EYEWEAR } from "@/lib/appearance";
 const author=z.string().trim().min(1,"Choisis ton prénom.").max(40);
 const uuid=z.string().uuid();
+const position=z.object({x:z.number().finite().min(0).max(100),y:z.number().finite().min(0).max(100)}).strict();
+const positions=z.object({hat:position.optional(),eyewear:position.optional(),floatie:position.optional()}).strict();
 const schema=z.discriminatedUnion("action",[
+  z.object({action:z.literal("featureIdea"),id:uuid,author,title:z.string().trim().min(1,"Donne un titre à ton idée.").max(120),body:z.string().trim().max(1500).default("")}),
   z.object({action:z.literal("activityEmoji"),proposalId:uuid,author,emoji:z.string().refine(isActivityEmoji,"Choisis un emoji dans la liste.").nullable()}),
   z.object({action:z.literal("comment"),id:uuid,proposalId:uuid,author,body:z.string().trim().min(1,"Écris un message.").max(1500,"1500 caractères maximum.")}),
   z.object({action:z.literal("details"),proposalId:uuid,author,costCents:z.number().int().min(0).max(1000000).nullable(),address:z.string().trim().max(300),travel:z.string().trim().max(200),capacity:z.number().int().min(1).max(10000).nullable(),pricing:z.string().trim().max(1500),notes:z.string().trim().max(3000)}),
   z.object({action:z.literal("select"),id:uuid,proposalId:uuid,author,start:z.string().datetime({offset:true}),end:z.string().datetime({offset:true})}),
   z.object({action:z.literal("editPlan"),planId:uuid,author,start:z.string().datetime({offset:true}),end:z.string().datetime({offset:true}),expectedUpdated:z.string().datetime({offset:true}).nullable()}),
   z.object({action:z.literal("attend"),planId:uuid,author,attending:z.boolean()}),
-  z.object({action:z.literal("profile"),author,avatar:z.number().int().min(0).max(35),hat:z.string().refine(v=>HATS.some(h=>h.id===v)).optional(),eyewear:z.string().refine(v=>EYEWEAR.some(h=>h.id===v)).optional(),floatie:z.boolean().optional(),animated:z.boolean().optional(),imageUrl:z.string().trim().max(1000).refine(s=>!s||(()=>{try{return new URL(s).protocol==="https:";}catch{return false;}})(),"Utilise une image avec une URL https://.")}),
+  z.object({action:z.literal("profile"),author,avatar:z.number().int().min(0).max(35),hat:z.string().refine(v=>HATS.some(h=>h.id===v)).optional(),eyewear:z.string().refine(v=>EYEWEAR.some(h=>h.id===v)).optional(),floatie:z.boolean().optional(),animated:z.boolean().optional(),positions:positions.optional(),imageUrl:z.string().trim().max(1000).refine(s=>!s||(()=>{try{return new URL(s).protocol==="https:";}catch{return false;}})(),"Utilise une image avec une URL https://.")}),
 ]);
 export async function POST(request:Request){
   try{
@@ -25,6 +28,7 @@ export async function POST(request:Request){
       if(p.action==="details"&&target.kind!=="activity")throw new Error("Cette fiche doit être une activité.");
       if(p.action==="activityEmoji"&&target.kind!=="activity")throw new Error("Cette proposition doit être une activité.");
     }
+    if(p.action==="featureIdea")await db.prepare("INSERT OR IGNORE INTO feature_ideas (id,author,title,body,created) VALUES (?,?,?,?,?)").bind(p.id,p.author,p.title,p.body,now).run();
     if(p.action==="comment")await db.prepare("INSERT OR IGNORE INTO comments (id,proposal_id,author,body,created) VALUES (?,?,?,?,?)").bind(p.id,p.proposalId,p.author,p.body,now).run();
     if(p.action==="activityEmoji")await db.prepare("UPDATE proposals SET emoji=?,updated_by=?,updated=? WHERE id=?").bind(p.emoji,p.author,now,p.proposalId).run();
     if(p.action==="details")await db.prepare("INSERT INTO activity_details (proposal_id,cost_cents,address,travel,capacity,pricing,notes,updated_by,updated) VALUES (?,?,?,?,?,?,?,?,?) ON CONFLICT(proposal_id) DO UPDATE SET cost_cents=excluded.cost_cents,address=excluded.address,travel=excluded.travel,capacity=excluded.capacity,pricing=excluded.pricing,notes=excluded.notes,updated_by=excluded.updated_by,updated=excluded.updated").bind(p.proposalId,p.costCents,p.address,p.travel,p.capacity,p.pricing,p.notes,p.author,now).run();
@@ -45,17 +49,18 @@ export async function POST(request:Request){
     }
     if(p.action==="profile"){
       const key=p.author.normalize("NFKC").toLocaleLowerCase("fr");
-      await db.prepare("INSERT INTO profiles (author_key,author,avatar,image_url,hat,eyewear,floatie,animated) VALUES (?,?,?,?,COALESCE(?,'none'),COALESCE(?,'none'),COALESCE(?,0),COALESCE(?,1)) ON CONFLICT(author_key) DO UPDATE SET author=excluded.author,avatar=excluded.avatar,image_url=excluded.image_url,hat=COALESCE(?,profiles.hat),eyewear=COALESCE(?,profiles.eyewear),floatie=COALESCE(?,profiles.floatie),animated=COALESCE(?,profiles.animated)").bind(key,p.author,p.avatar,p.imageUrl,p.hat??null,p.eyewear??null,p.floatie===undefined?null:Number(p.floatie),p.animated===undefined?null:Number(p.animated),p.hat??null,p.eyewear??null,p.floatie===undefined?null:Number(p.floatie),p.animated===undefined?null:Number(p.animated)).run();
+      await db.prepare("INSERT INTO profiles (author_key,author,avatar,image_url,hat,eyewear,floatie,animated,accessory_positions) VALUES (?,?,?,?,COALESCE(?,'none'),COALESCE(?,'none'),COALESCE(?,0),COALESCE(?,1),COALESCE(?,'{}')) ON CONFLICT(author_key) DO UPDATE SET author=excluded.author,avatar=excluded.avatar,image_url=excluded.image_url,hat=COALESCE(?,profiles.hat),eyewear=COALESCE(?,profiles.eyewear),floatie=COALESCE(?,profiles.floatie),animated=COALESCE(?,profiles.animated),accessory_positions=COALESCE(?,profiles.accessory_positions)").bind(key,p.author,p.avatar,p.imageUrl,p.hat??null,p.eyewear??null,p.floatie===undefined?null:Number(p.floatie),p.animated===undefined?null:Number(p.animated),p.positions===undefined?null:JSON.stringify(p.positions),p.hat??null,p.eyewear??null,p.floatie===undefined?null:Number(p.floatie),p.animated===undefined?null:Number(p.animated),p.positions===undefined?null:JSON.stringify(p.positions)).run();
     }
     // Return the stored row, including on a retried UUID. A failed follow-up
     // refresh must never hide a write that the server has already confirmed.
     let collection="",record:unknown;
+    if(p.action==="featureIdea"){collection="featureIdeas";record=await db.prepare("SELECT id,author,title,body,created FROM feature_ideas WHERE id=?").bind(p.id).first();}
     if(p.action==="activityEmoji"){collection="proposals";const row=await db.prepare("SELECT *,updated_by AS updatedBy FROM proposals WHERE id=?").bind(p.proposalId).first();record={...row,movie:null};}
     if(p.action==="comment"){collection="comments";record=await db.prepare("SELECT id,proposal_id AS proposalId,author,body,created FROM comments WHERE id=?").bind(p.id).first();}
     if(p.action==="details"){collection="activityDetails";record=await db.prepare("SELECT proposal_id AS proposalId,cost_cents AS costCents,address,travel,capacity,pricing,notes,updated_by AS updatedBy,updated FROM activity_details WHERE proposal_id=?").bind(p.proposalId).first();}
     if(p.action==="select"||p.action==="editPlan"){collection="plans";record=await db.prepare("SELECT id,proposal_id AS proposalId,start,end,selected_by AS selectedBy,created,updated_by AS updatedBy,updated FROM selected_plans WHERE id=?").bind(p.action==="select"?p.id:p.planId).first();}
     if(p.action==="attend"){collection="participants";record=await db.prepare("SELECT plan_id AS planId,author_key AS authorKey,author,attending FROM plan_participants WHERE plan_id=? AND author_key=?").bind(p.planId,p.author.normalize("NFKC").toLocaleLowerCase("fr")).first();}
-    if(p.action==="profile"){collection="profiles";record=await db.prepare("SELECT author_key AS authorKey,author,avatar,image_url AS imageUrl,hat,eyewear,floatie,animated FROM profiles WHERE author_key=?").bind(p.author.normalize("NFKC").toLocaleLowerCase("fr")).first();}
+    if(p.action==="profile"){collection="profiles";record=await db.prepare("SELECT author_key AS authorKey,author,avatar,image_url AS imageUrl,hat,eyewear,floatie,animated,accessory_positions AS positions FROM profiles WHERE author_key=?").bind(p.author.normalize("NFKC").toLocaleLowerCase("fr")).first();}
     return Response.json({ok:true,collection,record,...("id" in p?{id:p.id}:{})},{status:201});
   }catch(error){
     if(error instanceof z.ZodError)return Response.json({error:error.issues[0]?.message||"Vérifie les informations."},{status:400});

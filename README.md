@@ -9,17 +9,18 @@ Le QG du séjour du **20 au 27 septembre 2026**, pour Alex, Bimbo, Penelop, Telr
 ## Dans le jacuzzi
 
 - Villa 3D navigable : salon cinéma, terrasse et jacuzzi avec cheval chromé. Caméras animées, navigation par clic ou clavier, illustration de repli. Les scènes Three.js sont chargées à la demande et arrêtées hors écran ou en arrière-plan.
-- Onze cartes holographiques à retourner avec les contributions par prénom. 36 avatars kawaii au choix, ou image HTTPS personnalisée. Vestiaire partagé : chapeaux, lunettes, bouée, danses au survol et réactions aux votes. Animations désactivables et respect du mouvement réduit.
+- Onze cartes holographiques à retourner avec les contributions par prénom. 36 avatars kawaii au choix, ou image HTTPS personnalisée. Vestiaire partagé : chapeaux, lunettes, bouée, positions réglables par glissement ou flèches, recentrage, danses au survol et réactions aux votes. Animations désactivables et respect du mouvement réduit.
 - Salle de cinéma 3D pour chaque séance retenue : les personnes qui confirment leur présence prennent place avec leur avatar et leurs accessoires. Les votes ne valent jamais confirmation de présence.
-- Cinéma : recherche TMDB rapide en français, affiches, année, genres, durée, réalisation. Aucun synopsis ni bande-annonce. Ajout manuel possible.
-- Votes pour/contre avec détail nominatif : un seul vote par prénom et par proposition ou créneau. Changer d’avis remplace le précédent choix. La casse, les espaces autour du prénom et les variantes Unicode équivalentes sont normalisés.
-- Planning visible du 24 au 27 septembre, avec quatre colonnes larges. Déplacement des activités par poignée (souris, doigt, clavier ou sélection du jour), en conservant heure et durée. Les jours précédents restent stockés. Une modification concurrente annule le déplacement.
+- Cinéma : sélection en premier, tri Favoris par défaut, recherche TMDB rapide en français, affiches, année, genres, durée, réalisation. Aucun synopsis ni bande-annonce. Ajout manuel possible.
+- Votes pour/neutre/contre avec détail nominatif : un seul vote par prénom et par proposition ou créneau. Changer d’avis remplace le précédent choix. La casse, les espaces autour du prénom et les variantes Unicode équivalentes sont normalisés.
+- Planning en tête de la page Programme, visible du 24 au 27 septembre, avec quatre colonnes larges. Déplacement des activités par poignée (souris, doigt, clavier ou sélection du jour), en conservant heure et durée. Les jours précédents restent stockés. Une modification concurrente annule le déplacement.
 - Activités : nom, lien HTTP(S), créneau et alternatives horaires soumises au vote. Suggestions Escape Game et Karting.
 - Tout le crew peut modifier le nom, le lien, l’emoji et les horaires des activités, ainsi que les créneaux des rendez-vous retenus. Votes, discussions et présences sont conservés. Les modifications concurrentes sont signalées.
 - Emoji suggéré selon le nom pour chaque activité, modifiable et partagé. Visible dans le planning, les cartes, les fiches et les affiches.
 - Fiches pratiques : tarif, adresse, trajet, capacité, conditions et notes. La durée vient du créneau ; les informations inconnues restent inconnues.
 - Discussions chronologiques sur chaque proposition, avec brouillon conservé en cas d’erreur.
 - Plans retenus avec créneau explicite, compte à rebours d’annonce, lien partageable, affiche PNG et confirmations de présence distinctes des votes.
+- Boîte à idées pour proposer des fonctionnalités du site : titre, détails facultatifs et prénom, avec sauvegarde partagée et protection contre les doubles envois.
 - Stockage partagé D1. Actualisation toutes les 15 secondes quand la page est visible et après les actions. Identité libre par prénom.
 - Interface mobile, clavier, réduction des animations et image de repli sans WebGL.
 
@@ -40,6 +41,8 @@ node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1
 node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0005_flimsy_northstar.sql
 node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0006_vote_guard.sql
 node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0007_fluffy_stingray.sql
+node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0008_strange_slayback.sql
+node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0009_secret_sway.sql
 npm run dev
 ```
 

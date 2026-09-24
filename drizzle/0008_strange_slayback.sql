@@ -1,0 +1,1 @@
+ALTER TABLE `profiles` ADD `accessory_positions` text DEFAULT '{}' NOT NULL;

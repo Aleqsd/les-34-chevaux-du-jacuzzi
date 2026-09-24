@@ -9,7 +9,7 @@ const movieSchema = z.object({ id: z.string().max(90), title: z.string().min(1).
 const range = { start: z.string().datetime({ offset: true }), end: z.string().datetime({ offset: true }) };
 const schema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("propose"), kind: z.enum(["movie", "activity"]), title: z.string().trim().min(1).max(200), author: name, url: safeUrl.default(""), movie: movieSchema.nullable().optional(), start: range.start.optional(), end: range.end.optional(), emoji:z.string().refine(isActivityEmoji,"Choisis un emoji dans la liste.").nullable().optional() }),
-  z.object({ action: z.literal("vote"), id: z.string().uuid(), proposalId: z.string().uuid().optional(), slotId: z.string().uuid().optional(), author: name, value: z.union([z.literal(1), z.literal(-1)]) }),
+  z.object({ action: z.literal("vote"), id: z.string().uuid(), proposalId: z.string().uuid().optional(), slotId: z.string().uuid().optional(), author: name, value: z.union([z.literal(1), z.literal(0), z.literal(-1)]) }),
   z.object({ action: z.literal("slot"), proposalId: z.string().uuid(), author: name, ...range }),
   z.object({action:z.literal("moveActivity"),proposalId:z.string().uuid(),author:name,...range,expectedUpdated:z.string().datetime({offset:true}).nullable()}),
   z.object({ action:z.literal("editActivity"),proposalId:z.string().uuid(),author:name,title:z.string().trim().min(1).max(200),url:safeUrl,...range,emoji:z.string().refine(isActivityEmoji,"Choisis un emoji dans la liste.").nullable(),expectedUpdated:z.string().datetime({offset:true}).nullable() }),
@@ -25,9 +25,10 @@ export async function GET() {
       db.prepare("SELECT id,proposal_id AS proposalId,author,body,created FROM comments ORDER BY created,id"),
       db.prepare("SELECT id,proposal_id AS proposalId,start,end,selected_by AS selectedBy,created,updated_by AS updatedBy,updated FROM selected_plans ORDER BY start"),
       db.prepare("SELECT plan_id AS planId,author_key AS authorKey,author,attending FROM plan_participants ORDER BY author_key"),
-      db.prepare("SELECT author_key AS authorKey,author,avatar,image_url AS imageUrl,hat,eyewear,floatie,animated FROM profiles"),
+      db.prepare("SELECT author_key AS authorKey,author,avatar,image_url AS imageUrl,hat,eyewear,floatie,animated,accessory_positions AS positions FROM profiles"),
+      db.prepare("SELECT id,author,title,body,created FROM feature_ideas ORDER BY created DESC,id"),
     ]);
-    return Response.json({ proposals: (result[0].results as Record<string,unknown>[]).map(p => ({ ...p, movie: p.movie ? JSON.parse(p.movie as string) : null })), votes: result[1].results, slots: result[2].results, activityDetails:result[3].results, comments:result[4].results, plans:result[5].results, participants:result[6].results, profiles:result[7].results }, { headers: { "Cache-Control": "no-store" } });
+    return Response.json({ proposals: (result[0].results as Record<string,unknown>[]).map(p => ({ ...p, movie: p.movie ? JSON.parse(p.movie as string) : null })), votes: result[1].results, slots: result[2].results, activityDetails:result[3].results, comments:result[4].results, plans:result[5].results, participants:result[6].results, profiles:result[7].results, featureIdeas:result[8].results }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) { console.error("club:read", error); return Response.json({ error: "Impossible de charger le QG. Réessaie dans un instant." }, { status: 503 }); }
 }
 export async function POST(request: Request) {

@@ -9,13 +9,14 @@ import { Toaster } from "@/components/ui/sonner";
 import { ActivityEmojiBadge, ActivityEmojiPicker, ActivityEmojiEditor } from "@/components/activity-emoji";
 import { VillaScene } from "@/components/villa-scene";
 import { CinemaLounge } from "@/components/cinema-lounge";
+import { FeatureIdeas } from "@/components/feature-ideas";
 import { WeeklyPlanner } from "@/components/weekly-planner";
 import { reactAvatar } from "@/lib/appearance";
 import { CrewCards, Discussion, ActivityPractical } from "@/components/crew-social";
 import { SelectPlan, SelectedPlans, PlanReveal } from "@/components/plan-reveal";
 import { AvatarContext, CrewAvatar, AvatarEditor } from "@/components/crew-avatar";
 import { ClubEffects, celebrate } from "@/components/club-effects";
-import { Flag, KeyRound } from "lucide-react";
+import { Flag, KeyRound, Lightbulb, Minus } from "lucide-react";
 import { toast } from "sonner";
 import { CREW, EMPTY_STATE, dateLabel, score, timeLabel, tripDays, type ClubState, type Movie, type Proposal, type SelectedPlan, type Vote } from "@/lib/club";
 
@@ -87,7 +88,7 @@ export default function Club() {
   const [saving,setSaving] = useState(false);
   const [pendingVotes,setPendingVotes] = useState<string[]>([]);
   const voteInFlight=useRef(new Set<string>());
-  const [filter,setFilter] = useState("all");
+  const [filter,setFilter] = useState("popular");
   const pendingAction = useRef<null | ((name: string)=>void)>(null);
   const detailRequest = useRef(0);
   const refreshRequest = useRef(0);
@@ -139,7 +140,7 @@ export default function Club() {
       const result=await api<{vote:Vote}>("/api/club",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"vote",id:crypto.randomUUID(),[slot?"slotId":"proposalId"]:id,author,value})});
       ++refreshRequest.current;
       setState(current=>({...current,votes:[...current.votes.filter(v=>!(sameTarget(v)&&voterKey(v.author)===voterKey(author))),result.vote]}));
-      void load();celebrate(value===1?"yes":"no");reactAvatar(author,value===1?"yes":"no");toast.success(previous?.value===value?"Ton vote est confirmé.":previous?"Changement d’avis enregistré !":value===1?author+" est chaud ! Vote enregistré.":"C’est noté, "+author+". Vote contre enregistré.");
+      void load();if(value!==0)celebrate(value===1?"yes":"no");reactAvatar(author,value===1?"yes":value===0?"hello":"no");toast.success(previous?.value===value?"Ton vote est confirmé.":previous?"Changement d’avis enregistré !":value===1?author+" est chaud ! Vote enregistré.":value===0?"C’est noté, "+author+". Vote neutre enregistré.":"C’est noté, "+author+". Vote contre enregistré.");
     }catch(e){toast.error((e as Error).message);}finally{voteInFlight.current.delete(id);setPendingVotes(v=>v.filter(x=>x!==id));}
   });
   const moveActivity=async(p:Proposal,times:{start:string;end:string})=>{
@@ -182,14 +183,10 @@ export default function Club() {
   const featured=catalog[0];
   const votedNames=new Set(state.votes.map(v=>voterKey(v.author)));
   function Votes({id,slot=false}:{id:string;slot?:boolean}) {
-    const v=score(state.votes,id,slot);
-    const mine=person?v.list.find(v=>voterKey(v.author)===voterKey(person)):undefined;
-    const groups=[{value:1,label:"Pour",count:v.yes},{value:-1,label:"Contre",count:v.no}].map(group=>{
-      const names=new Map<string,number>();v.list.filter(vote=>vote.value===group.value).forEach(vote=>names.set(vote.author,(names.get(vote.author)||0)+1));
-      return {...group,names:[...names.entries()]};
-    });
-    return <div className="vote-widget"><div className="vote-pair"><button className="vote yes" aria-pressed={mine?.value===1} aria-disabled={pendingVotes.includes(id)} aria-busy={pendingVotes.includes(id)} onClick={()=>vote(id,1,slot)} aria-label={`Voter pour : ${v.yes} votes`}><ThumbsUp size={16}/><span>Chaud</span><b key={v.yes}>{v.yes}</b></button><button className="vote no" aria-pressed={mine?.value===-1} aria-disabled={pendingVotes.includes(id)} aria-busy={pendingVotes.includes(id)} onClick={()=>vote(id,-1,slot)} aria-label={`Voter contre : ${v.no} votes`}><ThumbsDown size={16}/><span>Pas trop</span><b key={v.no}>{v.no}</b></button></div>
-      <p className="my-vote">{mine?<><Check size={12}/>Ton vote : {mine.value===1?"pour":"contre"} · Tu peux changer d’avis.</>:"Un vote par prénom."}</p><details className="vote-details"><summary><Users size={14}/><span>Qui a voté ?</span><b>{v.list.length}</b><ChevronRight size={14}/></summary><div className="vote-breakdown">{groups.map(group=><section key={group.value} className={group.value===1?"voters-for":"voters-against"} aria-label={`Votes ${group.label.toLowerCase()}`}><h4>{group.value===1?<ThumbsUp size={14}/>:<ThumbsDown size={14}/>} {group.label}<b>{group.count}</b></h4>{group.names.length?<ul>{group.names.map(([name,count])=><li key={name}><Avatar name={name} small/><span>{name}</span><b>{count} vote{count>1?"s":""}</b></li>)}</ul>:<p>Aucun vote {group.label.toLowerCase()}.</p>}</section>)}</div></details>
+    const v=score(state.votes,id,slot),mine=person?v.list.find(vote=>voterKey(vote.author)===voterKey(person)):undefined;
+    const groups=[{value:1,label:"Pour",button:"Chaud",className:"yes",count:v.yes,Icon:ThumbsUp},{value:0,label:"Neutres",button:"Peu importe",className:"neutral",count:v.neutral,Icon:Minus},{value:-1,label:"Contre",button:"Pas trop",className:"no",count:v.no,Icon:ThumbsDown}];
+    return <div className="vote-widget"><div className="vote-pair">{groups.map(group=><button key={group.value} className={`vote ${group.className}`} aria-pressed={mine?.value===group.value} aria-disabled={pendingVotes.includes(id)} aria-busy={pendingVotes.includes(id)} onClick={()=>vote(id,group.value,slot)} aria-label={`Voter ${group.value===0?"neutre":group.label.toLowerCase()} : ${group.count} votes`}><group.Icon size={16}/><span>{group.button}</span><b key={group.count}>{group.count}</b></button>)}</div>
+      <p className="my-vote">{mine?<><Check size={12}/>Ton vote : {mine.value===1?"pour":mine.value===0?"neutre":"contre"} · Tu peux changer d’avis.</>:"Un vote par prénom."}</p><details className="vote-details"><summary><Users size={14}/><span>Qui a voté ?</span><b>{v.list.length}</b><ChevronRight size={14}/></summary><div className="vote-breakdown">{groups.map(group=><section key={group.value} className={`voters-${group.className}`} aria-label={`Votes ${group.label.toLowerCase()}`}><h4><group.Icon size={14}/> {group.label}<b>{group.count}</b></h4>{group.count?<ul>{v.list.filter(vote=>vote.value===group.value).map(vote=><li key={vote.id}><Avatar name={vote.author} small/><span>{vote.author}</span></li>)}</ul>:<p>Aucun vote {group.value===0?"neutre":group.label.toLowerCase()}.</p>}</section>)}</div></details>
     </div>;
   }
   function Avatar({name,small=false}:{name:string;small?:boolean}){return <CrewAvatar name={name} small={small}/>;}
@@ -205,12 +202,12 @@ export default function Club() {
 
   return <AvatarContext.Provider value={state.profiles}>
     <ClubEffects/>
-    {transition&&<div className={`universe-transition to-${transition}`} aria-hidden="true"><span/><span/><b>{transition==="cinema"?"JACUZZI PICTURES":transition==="activities"?"ON SORT DU BAIN":"RETOUR AU QG"}</b></div>}
+    {transition&&<div className={`universe-transition to-${transition}`} aria-hidden="true"><span/><span/><b>{transition==="cinema"?"JACUZZI PICTURES":transition==="activities"?"ON SORT DU BAIN":transition==="ideas"?"LA BOÎTE À IDÉES":"RETOUR AU QG"}</b></div>}
     <div className="ambient" aria-hidden="true"/>
     <Tabs value={view} onValueChange={goTo} className="app-shell">
       <header className="topbar">
         <a className="brand" href="/" aria-label="Les 34 Chevaux du Jacuzzi, accueil"><span className="brand-symbol">34<Waves size={27}/></span><span>LES 34 CHEVAUX<small>DU JACUZZI</small></span></a>
-        <TabsList className="main-nav"><TabsTrigger value="lobby"><Waves size={17}/>Le QG</TabsTrigger><TabsTrigger value="cinema"><Clapperboard size={17}/>Cinéma</TabsTrigger><TabsTrigger value="activities"><CalendarDays size={17}/>Programme</TabsTrigger></TabsList>
+        <TabsList className="main-nav"><TabsTrigger value="lobby"><Waves size={17}/>Le QG</TabsTrigger><TabsTrigger value="cinema"><Clapperboard size={17}/>Cinéma</TabsTrigger><TabsTrigger value="activities"><CalendarDays size={17}/>Programme</TabsTrigger><TabsTrigger value="ideas"><Lightbulb size={17}/>Idées</TabsTrigger></TabsList>
         <div className="header-right"><button className="crew-stack" onClick={()=>{pendingAction.current=null;setIdentityOpen(true);}} aria-label="Les 11 membres du crew">{CREW.slice(0,3).map(n=><Avatar key={n} name={n} small/>)}<span>+8</span></button><button className="identity-button" onClick={()=>{pendingAction.current=null;setIdentityOpen(true);}}>{person?<><Avatar name={person} small/><span>{person}</span></>:<><Users size={16}/><span>Qui es-tu ?</span></>}<ChevronRight size={14}/></button></div>
       </header>
       <main>
@@ -222,6 +219,12 @@ export default function Club() {
           <SelectedPlans state={state} onReveal={setRevealId}/>
         </TabsContent>
         <TabsContent value="cinema" className="view-panel">
+          <section className="film-section">
+            {movieFeedback?.kind==="success"&&<div className="movie-confirmation" role="status" tabIndex={-1} ref={movieConfirmation}><span className="confirmation-icon"><Check size={24}/></span><div><strong>{movieFeedback.title} a été ajouté !</strong><p>{movieFeedback.message}</p></div><button className="icon-button" onClick={()=>setMovieFeedback(null)} aria-label="Fermer la confirmation"><X size={17}/></button></div>}
+            <div className="section-heading"><div><div className="eyebrow muted">LA SÉLECTION</div><h2>À l’affiche du crew<span className="count">{films.length.toString().padStart(2,"0")}</span></h2></div><div className="section-tools"><button className={`text-filter ${filter==="all"?"active":""}`} aria-pressed={filter==="all"} onClick={()=>setFilter("all")}>Tous les films</button><button className={`text-filter ${filter==="popular"?"active":""}`} aria-pressed={filter==="popular"} onClick={()=>setFilter("popular")}><Heart size={14}/>Les favoris</button><button className="icon-button" aria-label="Rechercher et proposer un film" onClick={()=>{setQuery("");setSearchOpen(true);}}><Search size={19}/></button></div></div>
+            {loadError&&<div className="error-banner" role="alert">{loadError}<button onClick={()=>void load()}>Réessayer</button></div>}{!loaded?<div className="loading-line"><LoaderCircle className="spin" size={18}/>Le rideau se lève…</div>:films.length===0?<div className="empty-selection"><span className="empty-icon"><Clapperboard size={23}/></span><div><strong>Le premier rôle est pour toi.</strong><p>Propose un film ci-dessous ou cherche ton coup de cœur.</p></div><button className="round-arrow" onClick={()=>{setQuery("");setSearchOpen(true);}} aria-label="Proposer le premier film"><ArrowUpRight size={22}/></button></div>:<div className="movies-grid">{[...films].sort((a,b)=>filter==="popular"?(score(state.votes,b.id).yes-score(state.votes,b.id).no)-(score(state.votes,a.id).yes-score(state.votes,a.id).no):0).map((p,i)=>MovieCard({movie:p.movie||{...blankMovie(p.title),id:p.id},proposal:p,index:i}))}</div>}
+          </section>
+
           <CinemaLounge {...social} onReveal={setRevealId}/>
           <section className="cinema-hero" onPointerMove={sceneMove} onPointerLeave={sceneReset}>
             <div className="hero-copy"><div className="eyebrow"><span className="line"/> 11 POTES. UNE TÉLÉ. ZÉRO SPOILER.</div><h1>ON SE FAIT<br/><em>UN FILM ?</em><span className="headline-dot">✳</span></h1><div className="hero-bottom"><button className="button primary" onClick={()=>{setQuery("");setSearchOpen(true);}}><Plus size={18}/>Proposer un film<ArrowUpRight size={18}/></button><p>Le choix est collectif.<br/>Le plaid est personnel.</p></div></div>
@@ -241,11 +244,6 @@ export default function Club() {
             </div>
           </section>
           <div className="marquee" aria-hidden="true"><div>{Array.from({length:4},(_,i)=><span key={i}>LES BONS FILMS FONT LES BONNES SOIRÉES <span>✳</span> POP-CORN & DÉMOCRATIE <span>✳</span></span>)}</div></div>
-          <section className="film-section">
-            {movieFeedback?.kind==="success"&&<div className="movie-confirmation" role="status" tabIndex={-1} ref={movieConfirmation}><span className="confirmation-icon"><Check size={24}/></span><div><strong>{movieFeedback.title} a été ajouté !</strong><p>{movieFeedback.message}</p></div><button className="icon-button" onClick={()=>setMovieFeedback(null)} aria-label="Fermer la confirmation"><X size={17}/></button></div>}
-            <div className="section-heading"><div><div className="eyebrow muted">LA SÉLECTION</div><h2>À l’affiche du crew<span className="count">{films.length.toString().padStart(2,"0")}</span></h2></div><div className="section-tools"><button className={`text-filter ${filter==="all"?"active":""}`} onClick={()=>setFilter("all")}>Tous les films</button><button className={`text-filter ${filter==="popular"?"active":""}`} onClick={()=>setFilter("popular")}><Heart size={14}/>Les favoris</button><button className="icon-button" aria-label="Rechercher et proposer un film" onClick={()=>{setQuery("");setSearchOpen(true);}}><Search size={19}/></button></div></div>
-            {loadError&&<div className="error-banner" role="alert">{loadError}<button onClick={()=>void load()}>Réessayer</button></div>}{!loaded?<div className="loading-line"><LoaderCircle className="spin" size={18}/>Le rideau se lève…</div>:films.length===0?<div className="empty-selection"><span className="empty-icon"><Clapperboard size={23}/></span><div><strong>Le premier rôle est pour toi.</strong><p>Propose un film ci-dessous ou cherche ton coup de cœur.</p></div><button className="round-arrow" onClick={()=>{setQuery("");setSearchOpen(true);}} aria-label="Proposer le premier film"><ArrowUpRight size={22}/></button></div>:<div className="movies-grid">{[...films].sort((a,b)=>filter==="popular"?(score(state.votes,b.id).yes-score(state.votes,b.id).no)-(score(state.votes,a.id).yes-score(state.votes,a.id).no):0).map((p,i)=>MovieCard({movie:p.movie||{...blankMovie(p.title),id:p.id},proposal:p,index:i}))}</div>}
-          </section>
 
           <section className="inspiration-section"><div className="section-heading"><div><div className="eyebrow muted">EN PANNE D’INSPIRATION ?</div><h2>Ça mérite un débat<span className="yellow-star">✳</span></h2></div><span className="section-note">Quelques idées, à vous de voter.<ArrowDown size={16}/></span></div>
             {catalogError?<div className="error-banner">{catalogError}<button onClick={()=>void loadCatalog()}>Réessayer</button></div>:!catalog.length?<div className="movies-grid">{[0,1,2,3].map(i=><div key={i} className="poster skeleton"/>)}</div>:<div className="movies-grid">{catalog.filter(m=>!films.some(p=>p.movie?.id===m.id)).map((m,i)=>MovieCard({movie:m,index:i}))}</div>}
@@ -254,11 +252,12 @@ export default function Club() {
         </TabsContent>
 
         <TabsContent value="activities" className="view-panel">
-          <section className="activity-hero" onPointerMove={sceneMove} onPointerLeave={sceneReset}><img src="/jacuzzi.webp" alt="Un cheval chromé dans un jacuzzi bleu, l’emblème du crew"/><div className="pool-overlay"/><div className="pool-rings" aria-hidden="true"><i/><i/><span>34</span></div><div className="hero-copy"><div className="eyebrow"><span className="line"/> UNE SEMAINE. AUCUNE CHANCE DE S’ENNUYER.</div><h1>ON SORT<br/><em>DU JACUZZI ?</em></h1><button className="button primary" onClick={()=>openActivity()}><Plus size={18}/>Proposer une activité<ArrowUpRight size={18}/></button></div><span className="pool-sticker">11 POTES<br/><b>∞</b><br/>BONNES IDÉES</span></section>
-          <div className="marquee activity-marquee" aria-hidden="true"><div>{Array.from({length:4},(_,i)=><span key={i}>LE CREW DÉCIDE <span>✳</span> LES SOUVENIRS RESTENT <span>✳</span> 34 CHEVAUX. AUCUN FREIN. <span>✳</span></span>)}</div></div>
           <section className="planning-section"><div className="section-heading"><div><div className="eyebrow muted">LE PROGRAMME DES RÉJOUISSANCES</div><h2>Les prochains jours<span className="yellow-star">✳</span></h2></div><span className="date-pill"><CalendarDays size={16}/>24 — 27 sept. 2026</span></div><div className="planning-meta"><span>{activities.length} activité{activities.length!==1?"s":""} proposée{activities.length!==1?"s":""}</span><span>Heure de Paris · Créneaux ouverts au débat</span></div>
           {loadError&&<div className="error-banner" role="alert">{loadError}<button onClick={()=>void load()}>Réessayer</button></div>}
           <WeeklyPlanner activities={activities} canMove={!!person} onIdentify={()=>identify(()=>toast.info("Prénom choisi. Tu peux maintenant déplacer une activité."))} onOpen={setActivityDetail} onAdd={date=>openActivity(date)} onMove={moveActivity}/></section>
+          <section className="activity-hero" onPointerMove={sceneMove} onPointerLeave={sceneReset}><img src="/jacuzzi.webp" alt="Un cheval chromé dans un jacuzzi bleu, l’emblème du crew"/><div className="pool-overlay"/><div className="pool-rings" aria-hidden="true"><i/><i/><span>34</span></div><div className="hero-copy"><div className="eyebrow"><span className="line"/> UNE SEMAINE. AUCUNE CHANCE DE S’ENNUYER.</div><h1>ON SORT<br/><em>DU JACUZZI ?</em></h1><button className="button primary" onClick={()=>openActivity()}><Plus size={18}/>Proposer une activité<ArrowUpRight size={18}/></button></div><span className="pool-sticker">11 POTES<br/><b>∞</b><br/>BONNES IDÉES</span></section>
+          <div className="marquee activity-marquee" aria-hidden="true"><div>{Array.from({length:4},(_,i)=><span key={i}>LE CREW DÉCIDE <span>✳</span> LES SOUVENIRS RESTENT <span>✳</span> 34 CHEVAUX. AUCUN FREIN. <span>✳</span></span>)}</div></div>
+
           <section className="activity-section"><div className="section-heading"><div><div className="eyebrow muted">ON EN DIT QUOI ?</div><h2>Les plans du crew<span className="count">{activities.length.toString().padStart(2,"0")}</span></h2></div></div>{activities.length?<div className="activity-grid">{activities.map((p,i)=>{const slots=state.slots.filter(s=>s.proposalId===p.id);return <article className="activity-card enter" key={p.id} style={{"--delay":`${i*60}ms`,"--card-accent":COLORS[i%COLORS.length]} as CSSProperties}><div className="activity-top"><ActivityEmojiBadge proposal={p} className="activity-card-emoji"/><span className="activity-day">{p.start?dateLabel(p.start,{weekday:"short",day:"numeric"}):""}</span><ArrowUpRight size={25}/></div><h3><button onClick={()=>setActivityDetail(p.id)}>{p.title}</button></h3><div className="activity-time"><Clock3 size={16}/>{p.start&&timeLabel(p.start)} — {p.end&&timeLabel(p.end)}</div><div className="proposed"><Avatar name={p.author} small/><span>Une idée de <strong>{p.author}</strong></span></div>{Votes({id:p.id})}<button className="discussion-link" onClick={()=>setActivityDetail(p.id)}>Infos & discussion · {state.comments.filter(c=>c.proposalId===p.id).length} message(s)<ArrowUpRight size={14}/></button><div className="activity-edit-row"><button onClick={()=>editActivity(p)}><Clock3 size={15}/>Modifier l’activité</button></div><div className="activity-actions"><a href={p.url} target="_blank" rel="noopener noreferrer">Voir le lieu<ExternalLink size={14}/></a><button onClick={()=>openSlot(p)}>Autre créneau<Plus size={15}/></button></div>{slots.length>0&&<button className="alternatives-count" onClick={()=>setActivityDetail(p.id)}>{slots.length} autre{slots.length>1?"s":""} créneau{slots.length>1?"x":""} proposé{slots.length>1?"s":""}<ArrowRight size={15}/></button>}</article>;})}</div>:<div className="activity-empty"><Sparkles size={35}/><h3>Tout reste à inventer.</h3><p>Une rando, un resto, un escape game ?<br/>Un nom, un lien, un créneau. Le crew décide.</p><button className="button secondary" onClick={()=>openActivity()}>Lancer la première idée<Plus size={17}/></button></div>}</section>
           <section className="activity-ideas" aria-labelledby="activity-ideas-title">
             <div className="section-heading"><div><div className="eyebrow muted">ET SI ON TENTAIT ÇA ?</div><h2 id="activity-ideas-title">La boîte à bonnes idées<span className="yellow-star">✳</span></h2></div><span className="section-note">Choisis un créneau. Le crew décide.<ArrowDown size={16}/></span></div>
@@ -271,6 +270,7 @@ export default function Club() {
             <p className="ideas-note">Ces lieux sont des pistes : choisis le jour et l’heure avant de proposer l’activité au crew.</p>
           </section>
         </TabsContent>
+        <TabsContent value="ideas" className="view-panel"><FeatureIdeas {...social} loaded={loaded} error={loadError} onRetry={()=>void load()}/></TabsContent>
         <CrewCards state={state}/>
         <footer><a className="footer-brand" href="/">LES 34 CHEVAUX DU JACUZZI <Waves size={19}/></a><a className="contribute-link" href="https://github.com/Aleqsd/les-34-chevaux-du-jacuzzi" target="_blank" rel="noopener noreferrer"><img className="github-mark" src="/github.svg" alt="" width={19} height={19}/>Code ouvert · Viens contribuer<ArrowUpRight size={15}/></a><a className="tmdb-credit" href="https://www.themoviedb.org" target="_blank" rel="noopener noreferrer"><img src="/tmdb.svg" alt="TMDB"/>Données cinéma</a><p>This product uses the TMDB API but is not endorsed or certified by TMDB.</p></footer>
       </main>
