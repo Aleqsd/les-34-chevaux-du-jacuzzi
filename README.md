@@ -9,7 +9,7 @@ Le QG du séjour du **20 au 27 septembre 2026**, pour Alex, Bimbo, Penelop, Telr
 ## Dans le jacuzzi
 
 - Villa 3D navigable : salon cinéma, terrasse et jacuzzi avec cheval chromé. Caméras animées, navigation par clic ou clavier, illustration de repli. Les scènes Three.js sont chargées à la demande et arrêtées hors écran ou en arrière-plan.
-- Onze cartes holographiques à retourner avec les contributions par prénom. 36 avatars kawaii au choix, ou image HTTPS personnalisée. Vestiaire partagé : chapeaux, lunettes, bouée, positions réglables par glissement ou flèches, recentrage, danses au survol et réactions aux votes. Animations désactivables et respect du mouvement réduit.
+- Onze cartes holographiques à retourner avec les contributions par prénom. 36 avatars kawaii au choix, ou image HTTPS personnalisée. Vestiaire partagé : chapeaux, lunettes, bouée, positions réglables par glissement ou flèches, taille indépendante de 50 à 180 %, recentrage, danses au survol et réactions aux votes. Animations désactivables et respect du mouvement réduit.
 - Salle de cinéma 3D pour chaque séance retenue : les personnes qui confirment leur présence prennent place avec leur avatar et leurs accessoires. Les votes ne valent jamais confirmation de présence.
 - Cinéma : sélection en premier, tri Favoris par défaut, recherche TMDB rapide en français, affiches, année, genres, durée, réalisation. Aucun synopsis ni bande-annonce. Ajout manuel possible.
 - Votes pour/neutre/contre avec détail nominatif : un seul vote par prénom et par proposition ou créneau. Changer d’avis remplace le précédent choix. La casse, les espaces autour du prénom et les variantes Unicode équivalentes sont normalisés.
@@ -81,3 +81,9 @@ Les prénoms restent déclaratifs, sans compte ni vérification d’identité. L
 - Polices Manrope et Barlow Condensed ; icônes Lucide ; Three.js.
 
 Code sous [licence MIT](LICENSE). Les ressources tierces conservent leurs licences : [notices](THIRD_PARTY_NOTICES.md).
+
+Les accessoires du vestiaire (dont la bouée) se choisissent dans trois catégories : chapeaux, lunettes et accessoires. Chaque élément peut être déplacé et redimensionné de 50 à 180 %. Les anciens looks sont conservés. Les emojis des accessoires, activités et affiches utilisent les mêmes SVG Twemoji sur tous les systèmes, y compris dans le cinéma 3D.
+
+Le cinéma propose un accès au catalogue en tête de page. Depuis la fiche d’un film déjà ajouté, tout membre peut le supprimer après confirmation ; ses votes, messages, séances et présences liées sont retirés dans la même transaction. Les statistiques des cartes du crew sont affichées explicitement, indépendamment du support des faces 3D du navigateur.
+
+« Tous les films » est le filtre initial, trié par nombre de votes positifs décroissant (titre comme départage). « Mes favoris » ne montre que les films aimés par le prénom sélectionné.

@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/compone
 import { dateLabel, timeLabel, type ClubState, type Proposal, type SelectedPlan } from "@/lib/club";
 import type { SocialProps } from "@/components/crew-social";
 import { ActivityEmojiBadge } from "@/components/activity-emoji";
+import { emojiAsset } from "@/lib/emoji-assets";
 import { activityEmoji } from "@/lib/activity-emoji";
 import { celebrate } from "@/components/club-effects";
 
@@ -39,7 +40,7 @@ async function downloadPoster(p:Proposal,plan:SelectedPlan,names:string[],addres
   ctx.fillStyle="#080e20";ctx.fillRect(0,0,1080,1500);const scale=Math.max(1080/image.width,800/image.height);ctx.drawImage(image,(1080-image.width*scale)/2,0,image.width*scale,image.height*scale);
   const gradient=ctx.createLinearGradient(0,180,0,850);gradient.addColorStop(0,"rgba(8,14,32,0)");gradient.addColorStop(1,"#080e20");ctx.fillStyle=gradient;ctx.fillRect(0,0,1080,900);
   ctx.fillStyle="#dfff00";ctx.font="bold 25px Arial";ctx.fillText("LES 34 CHEVAUX DU JACUZZI",70,85);ctx.fillText("C’EST LE PLAN.",70,550);
-  if(p.kind==="activity"){ctx.save();ctx.font='120px "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif';ctx.fillText(activityEmoji(p),70,455);ctx.restore();}
+  if(p.kind==="activity"){const glyph=await new Promise<HTMLImageElement>((resolve,reject)=>{const img=new Image();img.onload=()=>resolve(img);img.onerror=reject;img.src=emojiAsset(activityEmoji(p));});ctx.drawImage(glyph,70,335,120,120);}
   let y=625;const wrap=(text:string,font:string,width:number,line:number,maxLines=20)=>{ctx.font=font;let row="",lines=0;for(const word of text.split(/\s+/)){if(ctx.measureText(`${row} ${word}`).width>width&&row){ctx.fillText(row,70,y);y+=line;lines++;row="";if(lines>=maxLines){ctx.fillText("…",70,y);return;}}row+=(row?" ":"")+word;}ctx.fillText(row,70,y);y+=line;};
   ctx.fillStyle="#fff";wrap(p.title,"bold 66px Arial",930,76,5);y+=25;ctx.fillStyle="#dfff00";wrap(dateLabel(plan.start),"bold 36px Arial",930,46,2);wrap(`${timeLabel(plan.start)} — ${timeLabel(plan.end)} · Heure de Paris`,"bold 30px Arial",930,42,2);ctx.fillStyle="#c0cbdf";wrap(address,"28px Arial",930,36,3);y+=25;ctx.fillStyle="#fff";wrap(names.length?`AVEC ${names.join(" · ")}`:"CONFIRME TA PRÉSENCE SUR LE SITE","bold 25px Arial",930,35,3);ctx.fillStyle="#6f85af";ctx.font="20px Arial";ctx.fillText("Retrouve les infos et les présences à jour sur l’affiche en ligne.",70,1410);ctx.font="17px Arial";ctx.fillText(url,70,1450,940);
   const blob=await new Promise<Blob>((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(),"image/png"));const href=URL.createObjectURL(blob);const a=document.createElement("a");a.href=href;a.download=`jacuzzi-${p.title.toLowerCase().replace(/[^a-z0-9]+/g,"-").slice(0,60)}.png`;a.click();setTimeout(()=>URL.revokeObjectURL(href),10000);

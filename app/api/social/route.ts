@@ -1,10 +1,11 @@
 import { database } from "@/lib/database";
 import { z } from "zod";
 import { isActivityEmoji } from "@/lib/activity-emoji";
-import { HATS, EYEWEAR } from "@/lib/appearance";
+import { HATS, EYEWEAR, EXTRAS } from "@/lib/appearance";
+import { MIN_ACCESSORY_SCALE, MAX_ACCESSORY_SCALE, readPositions, ACCESSORIES } from "@/lib/avatar-positions";
 const author=z.string().trim().min(1,"Choisis ton prénom.").max(40);
 const uuid=z.string().uuid();
-const position=z.object({x:z.number().finite().min(0).max(100),y:z.number().finite().min(0).max(100)}).strict();
+const position=z.object({x:z.number().finite().min(0).max(100),y:z.number().finite().min(0).max(100),scale:z.number().finite().min(MIN_ACCESSORY_SCALE).max(MAX_ACCESSORY_SCALE).optional()}).strict();
 const positions=z.object({hat:position.optional(),eyewear:position.optional(),floatie:position.optional()}).strict();
 const schema=z.discriminatedUnion("action",[
   z.object({action:z.literal("featureIdea"),id:uuid,author,title:z.string().trim().min(1,"Donne un titre à ton idée.").max(120),body:z.string().trim().max(1500).default("")}),
@@ -14,7 +15,7 @@ const schema=z.discriminatedUnion("action",[
   z.object({action:z.literal("select"),id:uuid,proposalId:uuid,author,start:z.string().datetime({offset:true}),end:z.string().datetime({offset:true})}),
   z.object({action:z.literal("editPlan"),planId:uuid,author,start:z.string().datetime({offset:true}),end:z.string().datetime({offset:true}),expectedUpdated:z.string().datetime({offset:true}).nullable()}),
   z.object({action:z.literal("attend"),planId:uuid,author,attending:z.boolean()}),
-  z.object({action:z.literal("profile"),author,avatar:z.number().int().min(0).max(35),hat:z.string().refine(v=>HATS.some(h=>h.id===v)).optional(),eyewear:z.string().refine(v=>EYEWEAR.some(h=>h.id===v)).optional(),floatie:z.boolean().optional(),animated:z.boolean().optional(),positions:positions.optional(),imageUrl:z.string().trim().max(1000).refine(s=>!s||(()=>{try{return new URL(s).protocol==="https:";}catch{return false;}})(),"Utilise une image avec une URL https://.")}),
+  z.object({action:z.literal("profile"),author,avatar:z.number().int().min(0).max(35),hat:z.string().refine(v=>HATS.some(h=>h.id===v)).optional(),eyewear:z.string().refine(v=>EYEWEAR.some(h=>h.id===v)).optional(),accessory:z.string().refine(v=>EXTRAS.some(h=>h.id===v)).optional(),floatie:z.boolean().optional(),animated:z.boolean().optional(),positions:positions.optional(),imageUrl:z.string().trim().max(1000).refine(s=>!s||(()=>{try{return new URL(s).protocol==="https:";}catch{return false;}})(),"Utilise une image avec une URL https://.")}),
 ]);
 export async function POST(request:Request){
   try{
@@ -49,7 +50,20 @@ export async function POST(request:Request){
     }
     if(p.action==="profile"){
       const key=p.author.normalize("NFKC").toLocaleLowerCase("fr");
-      await db.prepare("INSERT INTO profiles (author_key,author,avatar,image_url,hat,eyewear,floatie,animated,accessory_positions) VALUES (?,?,?,?,COALESCE(?,'none'),COALESCE(?,'none'),COALESCE(?,0),COALESCE(?,1),COALESCE(?,'{}')) ON CONFLICT(author_key) DO UPDATE SET author=excluded.author,avatar=excluded.avatar,image_url=excluded.image_url,hat=COALESCE(?,profiles.hat),eyewear=COALESCE(?,profiles.eyewear),floatie=COALESCE(?,profiles.floatie),animated=COALESCE(?,profiles.animated),accessory_positions=COALESCE(?,profiles.accessory_positions)").bind(key,p.author,p.avatar,p.imageUrl,p.hat??null,p.eyewear??null,p.floatie===undefined?null:Number(p.floatie),p.animated===undefined?null:Number(p.animated),p.positions===undefined?null:JSON.stringify(p.positions),p.hat??null,p.eyewear??null,p.floatie===undefined?null:Number(p.floatie),p.animated===undefined?null:Number(p.animated),p.positions===undefined?null:JSON.stringify(p.positions)).run();
+      const accessory=p.accessory??null;
+      const previous=p.accessory===undefined?await db.prepare("SELECT accessory,accessory_positions AS positions FROM profiles WHERE author_key=?").bind(key).first<{accessory:string;positions:string}>():null;
+      const floatie=accessory!==null?Number(accessory==="floatie"):previous?.accessory?Number(previous.accessory==="floatie"):p.floatie===undefined?null:Number(p.floatie);
+      let savedPositions=p.positions;
+      // Older open tabs do not know scales or the new accessory selector.
+      if(previous&&p.positions){
+        const merged=readPositions(previous.positions);
+        for(const kind of ACCESSORIES){
+          if(kind==="floatie"&&previous.accessory&&previous.accessory!=="floatie")continue;
+          if(p.positions[kind])merged[kind]={...merged[kind],...p.positions[kind]!};
+        }
+        savedPositions=merged;
+      }
+      await db.prepare("INSERT INTO profiles (author_key,author,avatar,image_url,hat,eyewear,floatie,accessory,animated,accessory_positions) VALUES (?,?,?,?,COALESCE(?,'none'),COALESCE(?,'none'),COALESCE(?,0),COALESCE(?,''),COALESCE(?,1),COALESCE(?,'{}')) ON CONFLICT(author_key) DO UPDATE SET author=excluded.author,avatar=excluded.avatar,image_url=excluded.image_url,hat=COALESCE(?,profiles.hat),eyewear=COALESCE(?,profiles.eyewear),floatie=COALESCE(?,profiles.floatie),accessory=COALESCE(?,profiles.accessory),animated=COALESCE(?,profiles.animated),accessory_positions=COALESCE(?,profiles.accessory_positions)").bind(key,p.author,p.avatar,p.imageUrl,p.hat??null,p.eyewear??null,floatie,accessory,p.animated===undefined?null:Number(p.animated),savedPositions===undefined?null:JSON.stringify(savedPositions),p.hat??null,p.eyewear??null,floatie,accessory,p.animated===undefined?null:Number(p.animated),savedPositions===undefined?null:JSON.stringify(savedPositions)).run();
     }
     // Return the stored row, including on a retried UUID. A failed follow-up
     // refresh must never hide a write that the server has already confirmed.
@@ -60,7 +74,7 @@ export async function POST(request:Request){
     if(p.action==="details"){collection="activityDetails";record=await db.prepare("SELECT proposal_id AS proposalId,cost_cents AS costCents,address,travel,capacity,pricing,notes,updated_by AS updatedBy,updated FROM activity_details WHERE proposal_id=?").bind(p.proposalId).first();}
     if(p.action==="select"||p.action==="editPlan"){collection="plans";record=await db.prepare("SELECT id,proposal_id AS proposalId,start,end,selected_by AS selectedBy,created,updated_by AS updatedBy,updated FROM selected_plans WHERE id=?").bind(p.action==="select"?p.id:p.planId).first();}
     if(p.action==="attend"){collection="participants";record=await db.prepare("SELECT plan_id AS planId,author_key AS authorKey,author,attending FROM plan_participants WHERE plan_id=? AND author_key=?").bind(p.planId,p.author.normalize("NFKC").toLocaleLowerCase("fr")).first();}
-    if(p.action==="profile"){collection="profiles";record=await db.prepare("SELECT author_key AS authorKey,author,avatar,image_url AS imageUrl,hat,eyewear,floatie,animated,accessory_positions AS positions FROM profiles WHERE author_key=?").bind(p.author.normalize("NFKC").toLocaleLowerCase("fr")).first();}
+    if(p.action==="profile"){collection="profiles";record=await db.prepare("SELECT author_key AS authorKey,author,avatar,image_url AS imageUrl,hat,eyewear,floatie,accessory,animated,accessory_positions AS positions FROM profiles WHERE author_key=?").bind(p.author.normalize("NFKC").toLocaleLowerCase("fr")).first();}
     return Response.json({ok:true,collection,record,...("id" in p?{id:p.id}:{})},{status:201});
   }catch(error){
     if(error instanceof z.ZodError)return Response.json({error:error.issues[0]?.message||"Vérifie les informations."},{status:400});

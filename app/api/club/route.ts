@@ -8,6 +8,7 @@ const safeUrl = z.string().trim().max(1000).refine(s => !s || /^https?:\/\//i.te
 const movieSchema = z.object({ id: z.string().max(90), title: z.string().min(1).max(200), year: z.string().max(4), genre: z.string().max(100), runtime: z.number().min(0).max(2000).nullable(), director: z.string().max(150), poster: safeUrl, backdrop: safeUrl, sourceUrl: safeUrl, source: z.string().max(30) });
 const range = { start: z.string().datetime({ offset: true }), end: z.string().datetime({ offset: true }) };
 const schema = z.discriminatedUnion("action", [
+  z.object({action:z.literal("deleteMovie"),proposalId:z.string().uuid(),author:name}),
   z.object({ action: z.literal("propose"), kind: z.enum(["movie", "activity"]), title: z.string().trim().min(1).max(200), author: name, url: safeUrl.default(""), movie: movieSchema.nullable().optional(), start: range.start.optional(), end: range.end.optional(), emoji:z.string().refine(isActivityEmoji,"Choisis un emoji dans la liste.").nullable().optional() }),
   z.object({ action: z.literal("vote"), id: z.string().uuid(), proposalId: z.string().uuid().optional(), slotId: z.string().uuid().optional(), author: name, value: z.union([z.literal(1), z.literal(0), z.literal(-1)]) }),
   z.object({ action: z.literal("slot"), proposalId: z.string().uuid(), author: name, ...range }),
@@ -25,7 +26,7 @@ export async function GET() {
       db.prepare("SELECT id,proposal_id AS proposalId,author,body,created FROM comments ORDER BY created,id"),
       db.prepare("SELECT id,proposal_id AS proposalId,start,end,selected_by AS selectedBy,created,updated_by AS updatedBy,updated FROM selected_plans ORDER BY start"),
       db.prepare("SELECT plan_id AS planId,author_key AS authorKey,author,attending FROM plan_participants ORDER BY author_key"),
-      db.prepare("SELECT author_key AS authorKey,author,avatar,image_url AS imageUrl,hat,eyewear,floatie,animated,accessory_positions AS positions FROM profiles"),
+      db.prepare("SELECT author_key AS authorKey,author,avatar,image_url AS imageUrl,hat,eyewear,floatie,accessory,animated,accessory_positions AS positions FROM profiles"),
       db.prepare("SELECT id,author,title,body,created FROM feature_ideas ORDER BY created DESC,id"),
     ]);
     return Response.json({ proposals: (result[0].results as Record<string,unknown>[]).map(p => ({ ...p, movie: p.movie ? JSON.parse(p.movie as string) : null })), votes: result[1].results, slots: result[2].results, activityDetails:result[3].results, comments:result[4].results, plans:result[5].results, participants:result[6].results, profiles:result[7].results, featureIdeas:result[8].results }, { headers: { "Cache-Control": "no-store" } });
@@ -39,6 +40,22 @@ export async function POST(request: Request) {
     if (raw.length > 12000) return Response.json({ error: "Proposition trop longue." }, { status: 413 });
     const p = schema.parse(JSON.parse(raw));
     const db = database(); const now = new Date().toISOString(); let id = crypto.randomUUID();
+    if(p.action==="deleteMovie"){
+      const target=await db.prepare("SELECT kind FROM proposals WHERE id=?").bind(p.proposalId).first();
+      if(target&&target.kind!=="movie")throw new Error("Cette proposition n’est pas un film.");
+      // D1 batch is atomic; remove dependent rows before their referenced records.
+      if(target)await db.batch([
+        db.prepare("DELETE FROM votes WHERE proposal_id=? OR slot_id IN (SELECT id FROM slots WHERE proposal_id=?)").bind(p.proposalId,p.proposalId),
+        db.prepare("DELETE FROM slots WHERE proposal_id=?").bind(p.proposalId),
+        db.prepare("DELETE FROM comments WHERE proposal_id=?").bind(p.proposalId),
+        db.prepare("DELETE FROM plan_participants WHERE plan_id IN (SELECT id FROM selected_plans WHERE proposal_id=?)").bind(p.proposalId),
+        db.prepare("DELETE FROM selected_plans WHERE proposal_id=?").bind(p.proposalId),
+        db.prepare("DELETE FROM activity_details WHERE proposal_id=?").bind(p.proposalId),
+        db.prepare("DELETE FROM duel_votes WHERE first_id=? OR second_id=? OR chosen_id=?").bind(p.proposalId,p.proposalId,p.proposalId),
+        db.prepare("DELETE FROM proposals WHERE id=? AND kind='movie'").bind(p.proposalId),
+      ]);
+      return Response.json({ok:true,deletedId:p.proposalId});
+    }
     let proposal: Proposal | undefined;let storedVote:unknown;
     if (p.action === "propose") {
       if (p.kind === "activity" && (!p.start || !p.end || !p.url)) throw new Error("Ajoute un lien et un créneau à ton activité.");

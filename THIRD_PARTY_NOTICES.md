@@ -13,3 +13,7 @@ GitHub mark from [Simple Icons](https://github.com/simple-icons/simple-icons), d
 ## Villa illustration
 
 The villa fallback illustration is original ImageGen artwork. Its generation prompt is recorded in docs/villa-night.prompt.txt. The interactive villa and cinema use original procedural Three.js geometry.
+
+## Emojis uniformes
+
+`public/emoji/*.svg` : Twemoji v14.0.2 par Twitter et contributeurs, sous [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). [Source officielle](https://github.com/twitter/twemoji/tree/v14.0.2/assets/svg), commit `7a3dad4a4da30497093dab22eafba135f02308e1`. Dessins inchangés, affichés à des tailles et positions personnalisées. Licence intégrale : `public/emoji/LICENSE-GRAPHICS`.

@@ -1,4 +1,5 @@
 "use client";
+import { EmojiImage } from "@/components/emoji-image";
 import { useRef,useState } from "react";
 import { Check, ChevronDown, LoaderCircle, Sparkles } from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -6,11 +7,11 @@ import { ACTIVITY_EMOJIS,activityEmoji,activityEmojiLabel,suggestActivityEmoji }
 import type { Proposal } from "@/lib/club";
 import type { SocialProps } from "@/components/crew-social";
 
-export function ActivityEmojiBadge({proposal,className=""}:{proposal:Pick<Proposal,"title"|"emoji">;className?:string}){return <span className={`activity-emoji ${className}`} aria-hidden="true">{activityEmoji(proposal)}</span>;}
+export function ActivityEmojiBadge({proposal,className=""}:{proposal:Pick<Proposal,"title"|"emoji">;className?:string}){return <span className={`activity-emoji ${className}`} aria-hidden="true"><EmojiImage emoji={activityEmoji(proposal)}/></span>;}
 
 export function ActivityEmojiPicker({title,value,onChange,disabled=false}:{title:string;value:string|null;onChange:(value:string|null)=>void;disabled?:boolean}){
   const resolved=value||suggestActivityEmoji(title);
-  return <div className="activity-emoji-picker"><div className="emoji-picker-preview"><span className="activity-emoji" aria-hidden="true" key={resolved}>{resolved}</span><div><strong>L’emoji de l’activité</strong><span>{value?"Choisi par toi":"Suggéré selon le nom"} · {activityEmojiLabel(resolved)}</span></div></div><details><summary>Choisir un autre emoji<ChevronDown size={16}/></summary><RadioGroup className="activity-emoji-grid" value={value||"auto"} onValueChange={choice=>onChange(choice==="auto"?null:choice)} disabled={disabled} aria-label="Emoji de l’activité"><label className="emoji-choice emoji-auto"><RadioGroupItem className="emoji-radio" value="auto" aria-label="Suggestion automatique"/><span aria-hidden="true"><Sparkles size={16}/>Auto</span></label>{ACTIVITY_EMOJIS.map(option=><label className="emoji-choice" key={option.emoji} title={option.label}><RadioGroupItem className="emoji-radio" value={option.emoji} aria-label={option.label}/><span aria-hidden="true">{option.emoji}</span></label>)}</RadioGroup></details></div>;
+  return <div className="activity-emoji-picker"><div className="emoji-picker-preview"><span className="activity-emoji" aria-hidden="true" key={resolved}><EmojiImage emoji={resolved}/></span><div><strong>L’emoji de l’activité</strong><span>{value?"Choisi par toi":"Suggéré selon le nom"} · {activityEmojiLabel(resolved)}</span></div></div><details><summary>Choisir un autre emoji<ChevronDown size={16}/></summary><RadioGroup className="activity-emoji-grid" value={value||"auto"} onValueChange={choice=>onChange(choice==="auto"?null:choice)} disabled={disabled} aria-label="Emoji de l’activité"><label className="emoji-choice emoji-auto"><RadioGroupItem className="emoji-radio" value="auto" aria-label="Suggestion automatique"/><span aria-hidden="true"><Sparkles size={16}/>Auto</span></label>{ACTIVITY_EMOJIS.map(option=><label className="emoji-choice" key={option.emoji} title={option.label}><RadioGroupItem className="emoji-radio" value={option.emoji} aria-label={option.label}/><span aria-hidden="true"><EmojiImage emoji={option.emoji}/></span></label>)}</RadioGroup></details></div>;
 }
 
 export function ActivityEmojiEditor({proposal,...s}:SocialProps&{proposal:Proposal}){

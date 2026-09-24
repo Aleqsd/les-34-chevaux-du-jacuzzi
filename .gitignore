@@ -50,5 +50,4 @@ next-env.d.ts
 /outputs/
 /work/
 
-# Sites owner metadata stays local
 .openai/

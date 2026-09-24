@@ -1,0 +1,1 @@
+ALTER TABLE `profiles` ADD `accessory` text DEFAULT '' NOT NULL;
