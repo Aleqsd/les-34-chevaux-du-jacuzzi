@@ -1,5 +1,6 @@
 // Twemoji v14.0.2 SVGs. Attribution: THIRD_PARTY_NOTICES.md.
 const assets:Record<string,string>={
+"🎖️":"1f396.svg","💎":"1f48e.svg","🛸":"1f6f8.svg","🌈":"1f308.svg","🚀":"1f680.svg","🌟":"1f31f.svg",
   "🌸": "1f338.svg",
   "🍕": "1f355.svg",
   "🍖": "1f356.svg",

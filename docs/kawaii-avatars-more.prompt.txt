@@ -1,0 +1,44 @@
+Use case: stylized-concept
+Asset type: ONE NEW ready-to-use animal avatar sprite sheet, extending an existing collection.
+
+INPUT IMAGES ARE STYLE REFERENCES ONLY. Create a NEW original sheet with new animals. Do not edit or reproduce the supplied sheets. Match their exceptionally cute premium softly tactile 3D figurine rendering, big glossy expressive eyes, soft cheek blush, gentle smiles, pastel colors, soft front studio illumination and clean pastel square backgrounds.
+
+CRITICAL EXACT GRID: exactly SIX COLUMNS and FOUR ROWS = TWENTY-FOUR equal SQUARE cells. Target 1536x1024 pixels, each cell 256x256. Perfectly aligned sharp horizontal/vertical joins. Full bleed from canvas edge to canvas edge. ZERO gaps, ZERO gutters, ZERO outer padding, ZERO border lines, ZERO rounded cell corners. One animal per cell. No animals or body parts overlap neighboring cells. Do not put letters, text or numbers anywhere.
+
+EXACT ROW-MAJOR ORDER (left to right, then top to bottom):
+ROW 1: ZEBRA, GIRAFFE, ELEPHANT, RHINOCEROS, HIPPOPOTAMUS, BISON.
+ROW 2: DEER, GOAT, PIG, COW, SHEEP, TAPIR.
+ROW 3: MEERKAT, LEMUR, CHAMELEON, GECKO, TOUCAN, PEACOCK.
+ROW 4: BUTTERFLY, LADYBUG, SNAIL, CRAB, SEAHORSE, MANTA RAY.
+
+COMPOSITION FOR EVERY CELL: centered frontal or nearly frontal close head-and-shoulders portrait, consistent face size and eye line across the set, no environmental scene. Face must remain readable at small avatar size. Keep all essential head silhouette details within each square with a little safe padding for circular cropping. Heads should fill roughly 65-75% of cell width. For small invertebrates, seahorse and manta ray, a compact front-facing full creature is appropriate, with the face as a big adorable central focal point. All 24 animals must be distinct and recognizable. No clothing or accessories.
+
+SPECIES DESIGN CUES:
+Zebra: ivory coat, clear black stripes, upright little black mane, tall rounded ears.
+Giraffe: golden spotted head, two short ossicones, sweet broad muzzle and hint of long neck.
+Elephant: soft blue-gray, large ears and a clearly visible short curved trunk.
+Rhinoceros: pearl-gray rounded thick head and one small gentle nose horn.
+Hippopotamus: lilac-gray, huge broad rounded muzzle with tiny rounded ears on top.
+Bison: rich chocolate-brown huge fluffy forehead, small curved pale horns, broad dark muzzle.
+Deer: caramel face, big side ears, two small branching antlers.
+Goat: ivory and tan, small backward-curved horns and a tiny chin beard.
+Pig: blush-pink, floppy ears and a round pink snout with two nostrils.
+Cow: black-and-white patchwork coat, pink broad muzzle, little horns.
+Sheep: woolly white rounded fleece halo and soft cream face.
+Tapir: warm gray with pale cheeks, round ears and distinct little flexible protruding snout.
+Meerkat: tan, slim upright upper body, small round ears and dark eye patches, distinct from raccoon.
+Lemur: silver-gray and white with dark eye patches and big amber eyes, small black nose, a tiny ringed tail hint.
+Chameleon: pastel lime and turquoise, rounded crest, large gentle turret eyes, tiny coiled tail hint.
+Gecko: soft pale peach spotted head, broad sweet smile, no crest, big glossy eyes and tiny sticky fingertips.
+Toucan: dark navy head, cream throat and one large unmistakable colorful yellow-orange beak.
+Peacock: cobalt-blue head, three delicate crest feathers, simplified emerald fan behind head.
+Butterfly: adorable tiny soft lilac face and antennae framed by symmetrical pastel cobalt/pink wings.
+Ladybug: cute black round face, tiny antennae and bright coral-red black-spotted rounded body.
+Snail: creamy peach friendly head, two eye stalks with sparkling eyes and an iridescent soft lavender shell.
+Crab: coral-pink round face, two sweet dark eyes and a pair of tiny raised claws.
+Seahorse: golden-pastel head with recognizable long curved snout and compact curled tail.
+Manta ray: rounded pastel blue diamond silhouette, broad friendly central face, wings taper gently sideways.
+
+BACKGROUNDS: each cell has its own clean flat pastel background, alternating powder cobalt blue, pale pink, pale mint, lavender, butter yellow, pale peach, seafoam, pale rose, pastel cyan and pale lime. Neighboring cells should have contrasting pastel hues, consistent with both supplied reference sheets. Subtle cobalt and lime reflected highlights on figurines, realistic soft fur/wool/scales where appropriate, polished gentle iridescence, no harsh shadows.
+
+ABSOLUTE CONSTRAINTS: exactly 24 distinct new animals, six columns by four rows, perfectly square equal-size cells, no repetition, no extra animals, no animal omitted. No horses, cats, foxes, pandas, axolotls, rabbits, otters, penguins, dragons, capybaras, frogs, unicorns, tigers, lions, bears, koalas, raccoons, wolves, dogs, hamsters, squirrels, hedgehogs, sloths, alpacas, owls, chicks, ducks, flamingos, parrots, bats, turtles, octopuses, whales, sharks, bees or dinosaurs. No text, no labels, no numbers, no logo, no watermark, no UI, no mockup.

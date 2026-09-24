@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type FormEvent, type PointerEvent } from "react";
-import { ArrowDown, ArrowRight, ArrowUpRight, CalendarDays, Check, ChevronLeft, ChevronRight, Clapperboard, Clock3, ExternalLink, Film, Heart, LoaderCircle, Plus, Search, ShieldCheck, Sparkles, Sun, ThumbsDown, ThumbsUp, Users, Waves, X } from "lucide-react";
+import { ArrowDown, ArrowRight, ArrowUpRight, CalendarDays, Check, ChevronLeft, ChevronRight, Clapperboard, Clock3, ExternalLink, Film, Heart, LoaderCircle, Plus, Search, ShieldCheck, Sparkles, Sun, Trophy, ThumbsDown, ThumbsUp, Users, Waves, X } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Combobox, ComboboxInput, ComboboxList, ComboboxItem } from "@/components/ui/combobox";
@@ -10,6 +10,13 @@ import { ActivityEmojiBadge, ActivityEmojiPicker, ActivityEmojiEditor } from "@/
 import { VillaScene } from "@/components/villa-scene";
 import { CinemaLounge } from "@/components/cinema-lounge";
 import { DeleteMovie } from "@/components/delete-movie";
+import { NextActivity } from "@/components/next-activity";
+import { CrewLeaderboard } from "@/components/crew-leaderboard";
+import { UnlockCelebration } from "@/components/unlock-celebration";
+import { useCrewPresence } from "@/components/use-crew-presence";
+import { RewardsPage } from "@/components/rewards-page";
+import { useUnlocks } from "@/components/use-unlocks";
+import type { CrewProgress } from "@/lib/club";
 import { FeatureIdeas } from "@/components/feature-ideas";
 import { WeeklyPlanner } from "@/components/weekly-planner";
 import { reactAvatar } from "@/lib/appearance";
@@ -62,6 +69,9 @@ export default function Club() {
   const [catalog,setCatalog] = useState<Movie[]>([]);
   const [catalogError,setCatalogError] = useState("");
   const [person,setPerson] = useState("");
+  const presence=useCrewPresence(person,view);
+  const peak=state.progress.find(p=>p.authorKey===voterKey(person))?.peakVotes??0;
+  const unlocks=useUnlocks(person,peak,loaded);
   const [identityOpen,setIdentityOpen] = useState(false);
   const [nameDraft,setNameDraft] = useState("");
   const [searchOpen,setSearchOpen] = useState(false);
@@ -98,7 +108,7 @@ export default function Club() {
   useEffect(()=>{if(movieFeedback?.kind==="success"){movieConfirmation.current?.focus({preventScroll:true});movieConfirmation.current?.scrollIntoView({behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"instant":"smooth",block:"center"});}},[movieFeedback]);
   const load = useCallback(async () => {
     const request = ++refreshRequest.current;
-    try { const data = await api<ClubState>("/api/club"); if (request !== refreshRequest.current) return; setState({...EMPTY_STATE,...data}); setLoadError(""); }
+    try { const data = await api<ClubState>("/api/club"); if (request !== refreshRequest.current) return; setState(current=>({...EMPTY_STATE,...data,progress:(data.progress??[]).map(p=>({...p,peakVotes:Math.max(p.peakVotes,current.progress.find(old=>old.authorKey===p.authorKey)?.peakVotes??0)}))})); setLoadError(""); }
     catch(e) { if (request === refreshRequest.current) setLoadError((e as Error).message); }
     finally { if (request === refreshRequest.current) setLoaded(true); }
   },[]);
@@ -128,21 +138,21 @@ export default function Club() {
   },[]);
   const identify = (action:(name:string)=>void) => {if(person){action(person);return;}pendingAction.current=action;setIdentityOpen(true);};
   const chooseName = (name:string) => {name=name.trim();if(!name)return;setPerson(name);setNameDraft(name);try{localStorage.setItem("jacuzzi-prenom",name);}catch{}setIdentityOpen(false);toast.success(`Bienvenue au QG, ${name} !`);reactAvatar(name);const action=pendingAction.current;pendingAction.current=null;if(action)setTimeout(()=>action(name),150);};
-  const saveSocial=async(body:Record<string,unknown>)=>{const result=await api<{collection:keyof ClubState;record:Record<string,unknown>}>("/api/social",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});setState(current=>{const list=current[result.collection] as unknown as Record<string,unknown>[];const identity=(row:Record<string,unknown>)=>row.id??(row.planId?String(row.planId)+":"+row.authorKey:row.authorKey??row.proposalId);return {...current,[result.collection]:[...list.filter(row=>identity(row)!==identity(result.record)),result.record]};});void load();return result;};
+  const saveSocial=async(body:Record<string,unknown>)=>{const result=await api<{collection:keyof ClubState;record:Record<string,unknown>;deletedId?:string}>("/api/social",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});++refreshRequest.current;if(result.deletedId){setState(current=>({...current,featureIdeas:current.featureIdeas.filter(idea=>idea.id!==result.deletedId),ideaComments:current.ideaComments.filter(c=>c.ideaId!==result.deletedId),votes:current.votes.filter(v=>v.ideaId!==result.deletedId)}));void load();return result;}if(!result.record){void load();throw new Error("Cette donnée vient d’être supprimée.");}setState(current=>{const list=current[result.collection] as unknown as Record<string,unknown>[];const identity=(row:Record<string,unknown>)=>row.id??(row.planId?String(row.planId)+":"+row.authorKey:row.authorKey??row.proposalId);return {...current,[result.collection]:[...list.filter(row=>identity(row)!==identity(result.record)),result.record]};});void load();return result;};
   const social={state,person,identify,save:saveSocial};
   const retain=(p:Proposal)=>{setEditingPlan(null);setDetail(null);setActivityDetail(null);setSelectPlan(p);};
   const mutate = async (body:unknown) => {const result=await api<{ok:boolean;id:string;proposal?:Proposal}>("/api/club",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});await load();return result;};
-  const vote = (id:string,value:number,slot=false) => identify(async author=>{
+  const vote = (id:string,value:number,slot:boolean|"idea"=false) => identify(async author=>{
     if(voteInFlight.current.has(id))return;
-    const sameTarget=(v:Vote)=>(slot?v.slotId:v.proposalId)===id;
+    const sameTarget=(v:Vote)=>(slot==="idea"?v.ideaId:slot?v.slotId:v.proposalId)===id;
     const previous=state.votes.find(v=>sameTarget(v)&&voterKey(v.author)===voterKey(author));
     voteInFlight.current.add(id);setPendingVotes(v=>[...v,id]);
     try{
-      const result=await api<{vote:Vote}>("/api/club",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"vote",id:crypto.randomUUID(),[slot?"slotId":"proposalId"]:id,author,value})});
+      const result=await api<{vote:Vote;progress:CrewProgress}>("/api/club",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"vote",id:crypto.randomUUID(),[slot==="idea"?"ideaId":slot?"slotId":"proposalId"]:id,author,value})});
       ++refreshRequest.current;
-      setState(current=>({...current,votes:[...current.votes.filter(v=>!(sameTarget(v)&&voterKey(v.author)===voterKey(author))),result.vote]}));
+      setState(current=>({...current,votes:[...current.votes.filter(v=>!(sameTarget(v)&&voterKey(v.author)===voterKey(author))),result.vote],progress:[...current.progress.filter(p=>p.authorKey!==result.progress.authorKey),{...result.progress,peakVotes:Math.max(result.progress.peakVotes,current.progress.find(p=>p.authorKey===result.progress.authorKey)?.peakVotes??0)}]}));
       void load();if(value!==0)celebrate(value===1?"yes":"no");reactAvatar(author,value===1?"yes":value===0?"hello":"no");toast.success(previous?.value===value?"Ton vote est confirmé.":previous?"Changement d’avis enregistré !":value===1?author+" est chaud ! Vote enregistré.":value===0?"C’est noté, "+author+". Vote neutre enregistré.":"C’est noté, "+author+". Vote contre enregistré.");
-    }catch(e){toast.error((e as Error).message);}finally{voteInFlight.current.delete(id);setPendingVotes(v=>v.filter(x=>x!==id));}
+    }catch(e){void load();toast.error((e as Error).message);}finally{voteInFlight.current.delete(id);setPendingVotes(v=>v.filter(x=>x!==id));}
   });
   const moveActivity=async(p:Proposal,times:{start:string;end:string})=>{
     if(!person)throw Error("Choisis ton prénom avant de déplacer une activité.");
@@ -185,7 +195,7 @@ export default function Club() {
   const selectedFilm=detail ? films.find(p=>detailProposalId ? p.id===detailProposalId : p.movie?.id===detail.id) : null;
   const featured=catalog[0];
   const votedNames=new Set(state.votes.map(v=>voterKey(v.author)));
-  function Votes({id,slot=false}:{id:string;slot?:boolean}) {
+  function Votes({id,slot=false}:{id:string;slot?:boolean|"idea"}) {
     const v=score(state.votes,id,slot),mine=person?v.list.find(vote=>voterKey(vote.author)===voterKey(person)):undefined;
     const groups=[{value:1,label:"Pour",button:"Chaud",className:"yes",count:v.yes,Icon:ThumbsUp},{value:0,label:"Neutres",button:"Peu importe",className:"neutral",count:v.neutral,Icon:Minus},{value:-1,label:"Contre",button:"Pas trop",className:"no",count:v.no,Icon:ThumbsDown}];
     return <div className="vote-widget"><div className="vote-pair">{groups.map(group=><button key={group.value} className={`vote ${group.className}`} aria-pressed={mine?.value===group.value} aria-disabled={pendingVotes.includes(id)} aria-busy={pendingVotes.includes(id)} onClick={()=>vote(id,group.value,slot)} aria-label={`Voter ${group.value===0?"neutre":group.label.toLowerCase()} : ${group.count} votes`}><group.Icon size={16}/><span>{group.button}</span><b key={group.count}>{group.count}</b></button>)}</div>
@@ -205,21 +215,21 @@ export default function Club() {
 
   return <AvatarContext.Provider value={state.profiles}>
     <ClubEffects/>
-    {transition&&<div className={`universe-transition to-${transition}`} aria-hidden="true"><span/><span/><b>{transition==="cinema"?"JACUZZI PICTURES":transition==="activities"?"ON SORT DU BAIN":transition==="ideas"?"LA BOÎTE À IDÉES":"RETOUR AU QG"}</b></div>}
+    {transition&&<div className={`universe-transition to-${transition}`} aria-hidden="true"><span/><span/><b>{transition==="cinema"?"JACUZZI PICTURES":transition==="activities"?"ON SORT DU BAIN":transition==="ideas"?"LA BOÎTE À IDÉES":transition==="rewards"?"TES MOMENTS DE GLOIRE":"RETOUR AU QG"}</b></div>}
     <div className="ambient" aria-hidden="true"/>
     <Tabs value={view} onValueChange={goTo} className="app-shell">
       <header className="topbar">
         <a className="brand" href="/" aria-label="Les 34 Chevaux du Jacuzzi, accueil"><span className="brand-symbol">34<Waves size={27}/></span><span>LES 34 CHEVAUX<small>DU JACUZZI</small></span></a>
-        <TabsList className="main-nav"><TabsTrigger value="lobby"><Waves size={17}/>Le QG</TabsTrigger><TabsTrigger value="cinema"><Clapperboard size={17}/>Cinéma</TabsTrigger><TabsTrigger value="activities"><CalendarDays size={17}/>Programme</TabsTrigger><TabsTrigger value="ideas"><Lightbulb size={17}/>Idées</TabsTrigger></TabsList>
+        <TabsList className="main-nav"><TabsTrigger value="lobby"><Waves size={17}/>Le QG</TabsTrigger><TabsTrigger value="cinema"><Clapperboard size={17}/>Cinéma</TabsTrigger><TabsTrigger value="activities"><CalendarDays size={17}/>Programme</TabsTrigger><TabsTrigger value="ideas"><Lightbulb size={17}/>Idées</TabsTrigger><TabsTrigger value="rewards"><Trophy size={17}/>Récompenses</TabsTrigger></TabsList>
         <div className="header-right"><button className="crew-stack" onClick={()=>{pendingAction.current=null;setIdentityOpen(true);}} aria-label="Les 11 membres du crew">{CREW.slice(0,3).map(n=><Avatar key={n} name={n} small/>)}<span>+8</span></button><button className="identity-button" onClick={()=>{pendingAction.current=null;setIdentityOpen(true);}}>{person?<><Avatar name={person} small/><span>{person}</span></>:<><Users size={16}/><span>Qui es-tu ?</span></>}<ChevronRight size={14}/></button></div>
       </header>
       <main>
         <div className="edition-line"><span><span className="spark">✳</span> LE QG DU CREW</span><span>20 — 27 SEPTEMBRE 2026 <span className="edition-year">/ ÉDITION 01</span></span></div>
         <TabsContent value="lobby" className="view-panel lobby-panel">
-          <VillaScene onCinema={()=>goTo("cinema")} onProgramme={()=>goTo("activities")} onWardrobe={()=>identify(()=>setAvatarOpen(true))}/>
+          <NextActivity state={state} onProgramme={()=>goTo("activities")} onOpen={(id,planId)=>planId?setRevealId(planId):setActivityDetail(id)}/><VillaScene members={presence.members} profiles={state.profiles} online={presence.online} person={person} onMove={(room,action)=>identify(()=>presence.move(room,action))} onCinema={()=>goTo("cinema")} onProgramme={()=>goTo("activities")} onWardrobe={()=>identify(()=>setAvatarOpen(true))}/>
           {loadError&&<div className="error-banner" role="alert">{loadError}<button onClick={()=>void load()}>Réessayer</button></div>}
           <div className="lobby-strip"><span><b>{films.length}</b> films à départager</span><span><b>{activities.length}</b> plans à vivre</span><span><b>{state.votes.length}</b> votes exprimés</span><button onClick={()=>identify(()=>setAvatarOpen(true))}><CrewAvatar name={person||"Alex"} small/>Personnaliser mon avatar<ArrowUpRight size={16}/></button></div>
-          <SelectedPlans state={state} onReveal={setRevealId}/>
+          <CrewLeaderboard state={state} person={person} onRewards={()=>goTo("rewards")}/><SelectedPlans state={state} onReveal={setRevealId}/>
         </TabsContent>
         <TabsContent value="cinema" className="view-panel">
           <section className="film-section">
@@ -274,7 +284,8 @@ export default function Club() {
             <p className="ideas-note">Ces lieux sont des pistes : choisis le jour et l’heure avant de proposer l’activité au crew.</p>
           </section>
         </TabsContent>
-        <TabsContent value="ideas" className="view-panel"><FeatureIdeas {...social} loaded={loaded} error={loadError} onRetry={()=>void load()}/></TabsContent>
+        <TabsContent value="ideas" className="view-panel"><FeatureIdeas {...social} renderVotes={id=>Votes({id,slot:"idea"})} loaded={loaded} error={loadError} onRetry={()=>void load()}/></TabsContent>
+        <TabsContent value="rewards" className="view-panel"><RewardsPage person={person} peak={peak} currentVotes={state.votes.filter(v=>voterKey(v.author)===voterKey(person)).length} onReplay={unlocks.replay} onWardrobe={()=>identify(()=>setAvatarOpen(true))} onIdentify={()=>identify(()=>{})}/></TabsContent>
         <CrewCards state={state}/>
         <footer><a className="footer-brand" href="/">LES 34 CHEVAUX DU JACUZZI <Waves size={19}/></a><a className="contribute-link" href="https://github.com/Aleqsd/les-34-chevaux-du-jacuzzi" target="_blank" rel="noopener noreferrer"><img className="github-mark" src="/github.svg" alt="" width={19} height={19}/>Code ouvert · Viens contribuer<ArrowUpRight size={15}/></a><a className="tmdb-credit" href="https://www.themoviedb.org" target="_blank" rel="noopener noreferrer"><img src="/tmdb.svg" alt="TMDB"/>Données cinéma</a><p>This product uses the TMDB API but is not endorsed or certified by TMDB.</p><p className="emoji-credit">Emojis : <a href="https://github.com/twitter/twemoji" target="_blank" rel="noopener noreferrer">Twemoji, Twitter et contributeurs</a> · <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">CC BY 4.0</a></p></footer>
       </main>
@@ -301,6 +312,7 @@ export default function Club() {
     <SelectPlan {...social} proposal={selectPlan} editing={editingPlan} onClose={()=>{setSelectPlan(null);setEditingPlan(null);}} onReveal={setRevealId}/>
     <PlanReveal key={revealId||"closed"} {...social} id={revealId} onEdit={plan=>{const p=state.proposals.find(p=>p.id===plan.proposalId);if(p){setRevealId(null);setEditingPlan(plan);setSelectPlan(p);}}} onClose={()=>{setRevealId(null);if(location.search.includes("plan="))history.replaceState(null,"",location.pathname);}}/>
     <AvatarEditor {...social} open={avatarOpen} onClose={()=>setAvatarOpen(false)}/>
+    <UnlockCelebration reward={avatarOpen||identityOpen?null:unlocks.reward} onClose={unlocks.dismiss} onWardrobe={()=>{unlocks.dismiss();setAvatarOpen(true);}}/>
     <Toaster theme="dark" position="bottom-center" richColors closeButton/>
   </AvatarContext.Provider>;
 }

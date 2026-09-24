@@ -10,7 +10,7 @@ const range = { start: z.string().datetime({ offset: true }), end: z.string().da
 const schema = z.discriminatedUnion("action", [
   z.object({action:z.literal("deleteMovie"),proposalId:z.string().uuid(),author:name}),
   z.object({ action: z.literal("propose"), kind: z.enum(["movie", "activity"]), title: z.string().trim().min(1).max(200), author: name, url: safeUrl.default(""), movie: movieSchema.nullable().optional(), start: range.start.optional(), end: range.end.optional(), emoji:z.string().refine(isActivityEmoji,"Choisis un emoji dans la liste.").nullable().optional() }),
-  z.object({ action: z.literal("vote"), id: z.string().uuid(), proposalId: z.string().uuid().optional(), slotId: z.string().uuid().optional(), author: name, value: z.union([z.literal(1), z.literal(0), z.literal(-1)]) }),
+  z.object({ action: z.literal("vote"), id: z.string().uuid(), proposalId: z.string().uuid().optional(), slotId: z.string().uuid().optional(), ideaId:z.string().uuid().optional(), author: name, value: z.union([z.literal(1), z.literal(0), z.literal(-1)]) }),
   z.object({ action: z.literal("slot"), proposalId: z.string().uuid(), author: name, ...range }),
   z.object({action:z.literal("moveActivity"),proposalId:z.string().uuid(),author:name,...range,expectedUpdated:z.string().datetime({offset:true}).nullable()}),
   z.object({ action:z.literal("editActivity"),proposalId:z.string().uuid(),author:name,title:z.string().trim().min(1).max(200),url:safeUrl,...range,emoji:z.string().refine(isActivityEmoji,"Choisis un emoji dans la liste.").nullable(),expectedUpdated:z.string().datetime({offset:true}).nullable() }),
@@ -20,7 +20,7 @@ export async function GET() {
     const db = database();
     const result = await db.batch([
       db.prepare("SELECT *,updated_by AS updatedBy FROM proposals ORDER BY created DESC"),
-      db.prepare("SELECT id, proposal_id as proposalId, slot_id as slotId, author, value,author_key AS authorKey,created FROM votes ORDER BY created,rowid"),
+      db.prepare("SELECT id, proposal_id as proposalId, slot_id as slotId, idea_id AS ideaId, author, value,author_key AS authorKey,created FROM votes ORDER BY created,rowid"),
       db.prepare("SELECT id, proposal_id as proposalId, author, start, end FROM slots ORDER BY created"),
       db.prepare("SELECT proposal_id AS proposalId,cost_cents AS costCents,address,travel,capacity,pricing,notes,updated_by AS updatedBy,updated FROM activity_details"),
       db.prepare("SELECT id,proposal_id AS proposalId,author,body,created FROM comments ORDER BY created,id"),
@@ -28,8 +28,10 @@ export async function GET() {
       db.prepare("SELECT plan_id AS planId,author_key AS authorKey,author,attending FROM plan_participants ORDER BY author_key"),
       db.prepare("SELECT author_key AS authorKey,author,avatar,image_url AS imageUrl,hat,eyewear,floatie,accessory,animated,accessory_positions AS positions FROM profiles"),
       db.prepare("SELECT id,author,title,body,created FROM feature_ideas ORDER BY created DESC,id"),
+      db.prepare("SELECT id,idea_id AS ideaId,author,body,created FROM idea_comments ORDER BY created,id"),
+      db.prepare("SELECT author_key AS authorKey,author,peak_votes AS peakVotes FROM crew_progress"),
     ]);
-    return Response.json({ proposals: (result[0].results as Record<string,unknown>[]).map(p => ({ ...p, movie: p.movie ? JSON.parse(p.movie as string) : null })), votes: result[1].results, slots: result[2].results, activityDetails:result[3].results, comments:result[4].results, plans:result[5].results, participants:result[6].results, profiles:result[7].results, featureIdeas:result[8].results }, { headers: { "Cache-Control": "no-store" } });
+    return Response.json({ proposals: (result[0].results as Record<string,unknown>[]).map(p => ({ ...p, movie: p.movie ? JSON.parse(p.movie as string) : null })), votes: result[1].results, slots: result[2].results, activityDetails:result[3].results, comments:result[4].results, plans:result[5].results, participants:result[6].results, profiles:result[7].results, featureIdeas:result[8].results,ideaComments:result[9].results,progress:result[10].results }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) { console.error("club:read", error); return Response.json({ error: "Impossible de charger le QG. Réessaie dans un instant." }, { status: 503 }); }
 }
 export async function POST(request: Request) {
@@ -56,7 +58,7 @@ export async function POST(request: Request) {
       ]);
       return Response.json({ok:true,deletedId:p.proposalId});
     }
-    let proposal: Proposal | undefined;let storedVote:unknown;
+    let proposal: Proposal | undefined;let storedVote:unknown;let progress:unknown;
     if (p.action === "propose") {
       if (p.kind === "activity" && (!p.start || !p.end || !p.url)) throw new Error("Ajoute un lien et un créneau à ton activité.");
       if (p.start && p.end) validateRange(p.start, p.end);
@@ -85,15 +87,17 @@ export async function POST(request: Request) {
       if (target?.kind !== "activity") throw new Error("Cette activité n’existe plus.");
       await db.prepare("INSERT INTO slots (id,proposal_id,author,start,end,created) VALUES (?,?,?,?,?,?)").bind(id,p.proposalId,p.author,p.start,p.end,now).run();
     } else {
-      if (!!p.proposalId === !!p.slotId) throw new Error("Choisis un film, une activité ou un créneau.");
-      const target = p.proposalId ? await db.prepare("SELECT id FROM proposals WHERE id=?").bind(p.proposalId).first() : await db.prepare("SELECT id FROM slots WHERE id=?").bind(p.slotId!).first();
+      if ([p.proposalId,p.slotId,p.ideaId].filter(Boolean).length!==1) throw new Error("Choisis un film, une activité ou un créneau.");
+      const target = p.ideaId?await db.prepare("SELECT id FROM feature_ideas WHERE id=?").bind(p.ideaId).first():p.proposalId ? await db.prepare("SELECT id FROM proposals WHERE id=?").bind(p.proposalId).first() : await db.prepare("SELECT id FROM slots WHERE id=?").bind(p.slotId!).first();
       if (!target) throw new Error("Cette proposition n’existe plus.");
       const authorKey=voterKey(p.author);
-      const column=p.proposalId?"proposal_id":"slot_id";
-      await db.prepare(`INSERT INTO votes (id,proposal_id,slot_id,author,value,created,author_key) VALUES (?,?,?,?,?,?,?) ON CONFLICT(${column},author_key) DO UPDATE SET author=excluded.author,value=excluded.value,created=excluded.created`).bind(p.id,p.proposalId??null,p.slotId??null,p.author,p.value,now,authorKey).run();
-      storedVote=await db.prepare(`SELECT id,proposal_id AS proposalId,slot_id AS slotId,author,value,author_key AS authorKey,created FROM votes WHERE ${column}=? AND author_key=?`).bind(p.proposalId||p.slotId!,authorKey).first();
+      const column=p.ideaId?"idea_id":p.proposalId?"proposal_id":"slot_id";
+      await db.batch([db.prepare(`INSERT INTO votes (id,proposal_id,slot_id,idea_id,author,value,created,author_key) VALUES (?,?,?,?,?,?,?,?) ON CONFLICT(${column},author_key) DO UPDATE SET author=excluded.author,value=excluded.value,created=excluded.created`).bind(p.id,p.proposalId??null,p.slotId??null,p.ideaId??null,p.author,p.value,now,authorKey),db.prepare("INSERT INTO crew_progress(author_key,author,peak_votes) SELECT ?,?,COUNT(*) FROM votes WHERE author_key=? ON CONFLICT(author_key) DO UPDATE SET author=excluded.author,peak_votes=MAX(crew_progress.peak_votes,excluded.peak_votes)").bind(authorKey,p.author,authorKey)]);
+      progress=await db.prepare("SELECT author_key AS authorKey,author,peak_votes AS peakVotes FROM crew_progress WHERE author_key=?").bind(authorKey).first();
+      storedVote=await db.prepare(`SELECT id,proposal_id AS proposalId,slot_id AS slotId,idea_id AS ideaId,author,value,author_key AS authorKey,created FROM votes WHERE ${column}=? AND author_key=?`).bind(p.ideaId||p.proposalId||p.slotId!,authorKey).first();
     }
-    return Response.json({ ok: true, id, ...(proposal ? {proposal} : {}),...(storedVote?{vote:storedVote}:{}) }, { status: 201 });
+    if(p.action==="vote"&&(!storedVote||!progress))return Response.json({error:"Cette proposition vient d’être supprimée. Actualise la liste."},{status:409});
+    return Response.json({ ok: true, id, ...(proposal ? {proposal} : {}),...(storedVote?{vote:storedVote,progress}:{}) }, { status: 201 });
   } catch (error) {
     if (error instanceof z.ZodError) return Response.json({ error: error.issues[0]?.message ?? "Vérifie les informations saisies." }, { status: 400 });
     if (error instanceof SyntaxError) return Response.json({ error: "Données invalides." }, { status: 400 });

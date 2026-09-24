@@ -1,13 +1,17 @@
 import { database } from "@/lib/database";
 import { z } from "zod";
 import { isActivityEmoji } from "@/lib/activity-emoji";
-import { HATS, EYEWEAR, EXTRAS } from "@/lib/appearance";
+import { HATS, EYEWEAR, EXTRAS, AVATAR_NAMES } from "@/lib/appearance";
 import { MIN_ACCESSORY_SCALE, MAX_ACCESSORY_SCALE, readPositions, ACCESSORIES } from "@/lib/avatar-positions";
+import { requiredVotes } from "@/lib/rewards";
 const author=z.string().trim().min(1,"Choisis ton prénom.").max(40);
 const uuid=z.string().uuid();
-const position=z.object({x:z.number().finite().min(0).max(100),y:z.number().finite().min(0).max(100),scale:z.number().finite().min(MIN_ACCESSORY_SCALE).max(MAX_ACCESSORY_SCALE).optional()}).strict();
+const scale=z.number().finite().min(MIN_ACCESSORY_SCALE).max(MAX_ACCESSORY_SCALE);
+const position=z.object({x:z.number().finite().min(0).max(100),y:z.number().finite().min(0).max(100),scale:scale.optional(),scaleX:scale.optional(),scaleY:scale.optional(),rotation:z.number().finite().min(-180).max(180).optional(),lockRatio:z.boolean().optional()}).strict();
 const positions=z.object({hat:position.optional(),eyewear:position.optional(),floatie:position.optional()}).strict();
 const schema=z.discriminatedUnion("action",[
+  z.object({action:z.literal("ideaComment"),id:uuid,ideaId:uuid,author,body:z.string().trim().min(1,"Écris un message.").max(1500)}),
+  z.object({action:z.literal("deleteFeatureIdea"),id:uuid,author}),
   z.object({action:z.literal("featureIdea"),id:uuid,author,title:z.string().trim().min(1,"Donne un titre à ton idée.").max(120),body:z.string().trim().max(1500).default("")}),
   z.object({action:z.literal("activityEmoji"),proposalId:uuid,author,emoji:z.string().refine(isActivityEmoji,"Choisis un emoji dans la liste.").nullable()}),
   z.object({action:z.literal("comment"),id:uuid,proposalId:uuid,author,body:z.string().trim().min(1,"Écris un message.").max(1500,"1500 caractères maximum.")}),
@@ -15,7 +19,7 @@ const schema=z.discriminatedUnion("action",[
   z.object({action:z.literal("select"),id:uuid,proposalId:uuid,author,start:z.string().datetime({offset:true}),end:z.string().datetime({offset:true})}),
   z.object({action:z.literal("editPlan"),planId:uuid,author,start:z.string().datetime({offset:true}),end:z.string().datetime({offset:true}),expectedUpdated:z.string().datetime({offset:true}).nullable()}),
   z.object({action:z.literal("attend"),planId:uuid,author,attending:z.boolean()}),
-  z.object({action:z.literal("profile"),author,avatar:z.number().int().min(0).max(35),hat:z.string().refine(v=>HATS.some(h=>h.id===v)).optional(),eyewear:z.string().refine(v=>EYEWEAR.some(h=>h.id===v)).optional(),accessory:z.string().refine(v=>EXTRAS.some(h=>h.id===v)).optional(),floatie:z.boolean().optional(),animated:z.boolean().optional(),positions:positions.optional(),imageUrl:z.string().trim().max(1000).refine(s=>!s||(()=>{try{return new URL(s).protocol==="https:";}catch{return false;}})(),"Utilise une image avec une URL https://.")}),
+  z.object({action:z.literal("profile"),author,transformVersion:z.literal(2).optional(),avatar:z.number().int().min(0).max(AVATAR_NAMES.length-1),hat:z.string().refine(v=>HATS.some(h=>h.id===v)).optional(),eyewear:z.string().refine(v=>EYEWEAR.some(h=>h.id===v)).optional(),accessory:z.string().refine(v=>EXTRAS.some(h=>h.id===v)).optional(),floatie:z.boolean().optional(),animated:z.boolean().optional(),positions:positions.optional(),imageUrl:z.string().trim().max(1000).refine(s=>!s||(()=>{try{return new URL(s).protocol==="https:";}catch{return false;}})(),"Utilise une image avec une URL https://.")}),
 ]);
 export async function POST(request:Request){
   try{
@@ -23,6 +27,11 @@ export async function POST(request:Request){
     if(origin&&origin!==new URL(request.url).origin)return Response.json({error:"Origine non autorisée."},{status:403});
     const raw=await request.text();if(raw.length>12000)return Response.json({error:"Message trop long."},{status:413});
     const p=schema.parse(JSON.parse(raw));const db=database();const now=new Date().toISOString();
+    if(p.action==="deleteFeatureIdea"){
+      await db.batch([db.prepare("DELETE FROM votes WHERE idea_id=?").bind(p.id),db.prepare("DELETE FROM idea_comments WHERE idea_id=?").bind(p.id),db.prepare("DELETE FROM feature_ideas WHERE id=?").bind(p.id)]);
+      return Response.json({ok:true,collection:"featureIdeas",deletedId:p.id});
+    }
+    if(p.action==="ideaComment"){const target=await db.prepare("SELECT id FROM feature_ideas WHERE id=?").bind(p.ideaId).first();if(!target)throw new Error("Cette idée n’existe plus.");await db.prepare("INSERT OR IGNORE INTO idea_comments(id,idea_id,author,body,created) VALUES(?,?,?,?,?)").bind(p.id,p.ideaId,p.author,p.body,now).run();}
     if("proposalId" in p){
       const target=await db.prepare("SELECT kind FROM proposals WHERE id=?").bind(p.proposalId).first();
       if(!target)throw new Error("Cette proposition n’existe plus.");
@@ -50,8 +59,10 @@ export async function POST(request:Request){
     }
     if(p.action==="profile"){
       const key=p.author.normalize("NFKC").toLocaleLowerCase("fr");
+      const needed=Math.max(requiredVotes("hat",p.hat||"none"),requiredVotes("accessory",p.accessory||"none"));
+      if(needed){const earned=await db.prepare("SELECT peak_votes FROM crew_progress WHERE author_key=?").bind(key).first<{peak_votes:number}>();if((earned?.peak_votes??0)<needed)throw new Error(`Choisis un accessoire débloqué : celui-ci demande ${needed} votes.`);}
       const accessory=p.accessory??null;
-      const previous=p.accessory===undefined?await db.prepare("SELECT accessory,accessory_positions AS positions FROM profiles WHERE author_key=?").bind(key).first<{accessory:string;positions:string}>():null;
+      const previous=p.transformVersion!==2?await db.prepare("SELECT accessory,accessory_positions AS positions FROM profiles WHERE author_key=?").bind(key).first<{accessory:string;positions:string}>():null;
       const floatie=accessory!==null?Number(accessory==="floatie"):previous?.accessory?Number(previous.accessory==="floatie"):p.floatie===undefined?null:Number(p.floatie);
       let savedPositions=p.positions;
       // Older open tabs do not know scales or the new accessory selector.
@@ -68,6 +79,7 @@ export async function POST(request:Request){
     // Return the stored row, including on a retried UUID. A failed follow-up
     // refresh must never hide a write that the server has already confirmed.
     let collection="",record:unknown;
+    if(p.action==="ideaComment"){collection="ideaComments";record=await db.prepare("SELECT id,idea_id AS ideaId,author,body,created FROM idea_comments WHERE id=?").bind(p.id).first();}
     if(p.action==="featureIdea"){collection="featureIdeas";record=await db.prepare("SELECT id,author,title,body,created FROM feature_ideas WHERE id=?").bind(p.id).first();}
     if(p.action==="activityEmoji"){collection="proposals";const row=await db.prepare("SELECT *,updated_by AS updatedBy FROM proposals WHERE id=?").bind(p.proposalId).first();record={...row,movie:null};}
     if(p.action==="comment"){collection="comments";record=await db.prepare("SELECT id,proposal_id AS proposalId,author,body,created FROM comments WHERE id=?").bind(p.id).first();}
@@ -75,6 +87,7 @@ export async function POST(request:Request){
     if(p.action==="select"||p.action==="editPlan"){collection="plans";record=await db.prepare("SELECT id,proposal_id AS proposalId,start,end,selected_by AS selectedBy,created,updated_by AS updatedBy,updated FROM selected_plans WHERE id=?").bind(p.action==="select"?p.id:p.planId).first();}
     if(p.action==="attend"){collection="participants";record=await db.prepare("SELECT plan_id AS planId,author_key AS authorKey,author,attending FROM plan_participants WHERE plan_id=? AND author_key=?").bind(p.planId,p.author.normalize("NFKC").toLocaleLowerCase("fr")).first();}
     if(p.action==="profile"){collection="profiles";record=await db.prepare("SELECT author_key AS authorKey,author,avatar,image_url AS imageUrl,hat,eyewear,floatie,accessory,animated,accessory_positions AS positions FROM profiles WHERE author_key=?").bind(p.author.normalize("NFKC").toLocaleLowerCase("fr")).first();}
+    if(!record)return Response.json({error:"Cette donnée vient d’être supprimée. Actualise la liste."},{status:409});
     return Response.json({ok:true,collection,record,...("id" in p?{id:p.id}:{})},{status:201});
   }catch(error){
     if(error instanceof z.ZodError)return Response.json({error:error.issues[0]?.message||"Vérifie les informations."},{status:400});

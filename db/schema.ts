@@ -12,8 +12,8 @@ export const votes = sqliteTable("votes", {
   id: text("id").primaryKey(), proposalId: text("proposal_id").references(() => proposals.id),
   slotId: text("slot_id").references(() => slots.id), author: text("author").notNull(),
   value: integer("value").notNull(), created: text("created").notNull(),
-  authorKey:text("author_key").notNull().default(""),
-}, t => [index("idx_votes_proposal").on(t.proposalId), index("idx_votes_slot").on(t.slotId),uniqueIndex("unique_vote_proposal_author").on(t.proposalId,t.authorKey),uniqueIndex("unique_vote_slot_author").on(t.slotId,t.authorKey)]);
+  authorKey:text("author_key").notNull().default(""), ideaId:text("idea_id").references(()=>featureIdeas.id),
+}, t => [index("idx_votes_proposal").on(t.proposalId), index("idx_votes_slot").on(t.slotId),uniqueIndex("unique_vote_proposal_author").on(t.proposalId,t.authorKey),uniqueIndex("unique_vote_slot_author").on(t.slotId,t.authorKey),uniqueIndex("unique_vote_idea_author").on(t.ideaId,t.authorKey)]);
 export const activityDetails = sqliteTable("activity_details", {
   proposalId:text("proposal_id").primaryKey().references(()=>proposals.id), costCents:integer("cost_cents"),
   address:text("address").notNull().default(""), travel:text("travel").notNull().default(""), capacity:integer("capacity"),
@@ -35,3 +35,6 @@ export const planParticipants = sqliteTable("plan_participants", {
 export const profiles=sqliteTable("profiles",{authorKey:text("author_key").primaryKey(),author:text("author").notNull(),avatar:integer("avatar").notNull(),imageUrl:text("image_url").notNull().default(""),hat:text("hat").notNull().default("none"),eyewear:text("eyewear").notNull().default("none"),floatie:integer("floatie").notNull().default(0),accessory:text("accessory").notNull().default(""),animated:integer("animated").notNull().default(1),positions:text("accessory_positions").notNull().default("{}")});
 
 export const featureIdeas=sqliteTable("feature_ideas",{id:text("id").primaryKey(),author:text("author").notNull(),title:text("title").notNull(),body:text("body").notNull().default(""),created:text("created").notNull()});
+export const ideaComments=sqliteTable("idea_comments",{id:text("id").primaryKey(),ideaId:text("idea_id").notNull().references(()=>featureIdeas.id),author:text("author").notNull(),body:text("body").notNull(),created:text("created").notNull()},t=>[index("idx_idea_comments").on(t.ideaId,t.created)]);
+export const crewProgress=sqliteTable("crew_progress",{authorKey:text("author_key").primaryKey(),author:text("author").notNull(),peakVotes:integer("peak_votes").notNull().default(0)});
+export const presence=sqliteTable("presence",{sessionId:text("session_id").primaryKey(),authorKey:text("author_key").notNull(),author:text("author").notNull(),room:text("room").notNull(),action:text("action").notNull(),revision:integer("revision").notNull(),changed:integer("changed").notNull(),lastSeen:integer("last_seen").notNull()},t=>[index("idx_presence_seen").on(t.lastSeen)]);

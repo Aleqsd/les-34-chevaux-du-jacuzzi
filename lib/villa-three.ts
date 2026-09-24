@@ -1,5 +1,6 @@
 import { THREE,box,material,sceneRuntime,screenTexture } from "@/lib/scene-runtime";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { villaPresence } from "@/lib/villa-presence";
 export type VillaZone="villa"|"cinema"|"terrace"|"jacuzzi";
 export function buildVilla(host:HTMLDivElement,onZone:(zone:VillaZone)=>void,onContextChange:(ready:boolean)=>void){
   const rt=sceneRuntime(host,onContextChange),{scene,camera}=rt;
@@ -31,8 +32,9 @@ export function buildVilla(host:HTMLDivElement,onZone:(zone:VillaZone)=>void,onC
     const hit=(e:PointerEvent)=>{const r=host.getBoundingClientRect();mouse.set((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1);ray.setFromCamera(mouse,camera);return ray.intersectObjects(proxies)[0]?.object as THREE.Mesh|undefined;};
     const pointerDown=(e:PointerEvent)=>{down={x:e.clientX,y:e.clientY};};const pointerUp=(e:PointerEvent)=>{if(down&&Math.hypot(e.clientX-down.x,e.clientY-down.y)<8){const object=hit(e);if(object)onZone(object.userData.zone);}down=null;};const pointerMove=(e:PointerEvent)=>{host.style.cursor=hit(e)?"pointer":"default";};
     host.addEventListener('pointerdown',pointerDown);host.addEventListener('pointerup',pointerUp);host.addEventListener('pointermove',pointerMove);rt.addCleanup(()=>{host.removeEventListener('pointerdown',pointerDown);host.removeEventListener('pointerup',pointerUp);host.removeEventListener('pointermove',pointerMove);});
+    const people=villaPresence(rt);
     rt.onResize=()=>setZone(zone);
-    rt.update=(time,dt)=>{if(progress<1){elapsed+=dt;progress=rt.motion.matches?1:Math.min(1,elapsed/.85);const easing=progress*progress*(3-2*progress);camera.position.lerpVectors(from,desired,easing);look.lerpVectors(fromTarget,target,easing);}camera.lookAt(look);if(!rt.motion.matches){floaty.position.y=.64+Math.sin(time*1.1)*.06;floaty.rotation.z=Math.sin(time*.8)*.025;ripples.forEach((r,i)=>{r.scale.setScalar(1+Math.sin(time*1.4+i)*.025);});}else{floaty.position.y=.64;floaty.rotation.z=0;}};
-    rt.draw();return {setZone,dispose:rt.dispose};
+    rt.update=(time,dt)=>{people.tick(time,dt);if(progress<1){elapsed+=dt;progress=rt.motion.matches?1:Math.min(1,elapsed/.85);const easing=progress*progress*(3-2*progress);camera.position.lerpVectors(from,desired,easing);look.lerpVectors(fromTarget,target,easing);}camera.lookAt(look);if(!rt.motion.matches){floaty.position.y=.64+Math.sin(time*1.1)*.06;floaty.rotation.z=Math.sin(time*.8)*.025;ripples.forEach((r,i)=>{r.scale.setScalar(1+Math.sin(time*1.4+i)*.025);});}else{floaty.position.y=.64;floaty.rotation.z=0;}};
+    rt.draw();return {setZone,updatePresence:people.update,dispose:rt.dispose};
   }catch(error){rt.dispose();throw error;}
 }
