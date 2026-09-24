@@ -152,7 +152,7 @@ try{
  eventAt=pickAt(5);seed({nextEventAt:eventAt});r=await action({kind:"event",eventAt});check("rain grants250 minimum",r.eventReward===250&&r.player.balance===250,r);
  const rainPlayer=game.freshCookiePlayer(1000);rainPlayer.buildings[1]=100;check("rain scales to120s base production",game.cookieEventReward(rainPlayer,5000)===12000);
 
- check("expanded catalog sizes and unique identifiers",game.UPGRADES.length===40&&game.COOKIE_MISSIONS.length===24&&game.COOKIE_ACHIEVEMENTS.length===60&&["UPGRADES","COOKIE_MISSIONS","COOKIE_ACHIEVEMENTS"].every(k=>new Set(game[k].map(x=>x.id)).size===game[k].length));
+ check("expanded catalog sizes and unique identifiers",game.UPGRADES.length===40&&game.COOKIE_MISSIONS.length===24&&game.COOKIE_ACHIEVEMENTS.length===68&&["UPGRADES","COOKIE_MISSIONS","COOKIE_ACHIEVEMENTS"].every(k=>new Set(game[k].map(x=>x.id)).size===game[k].length));
  seed({});await action({kind:"mission",mission:"m13"},uuid(),400);await action({kind:"mission",mission:"m15"},uuid(),400);
  seed({buildings:[1,1,1,0,0,0,0,0,0,0],updated:Date.now()+60000});r=await action({kind:"mission",mission:"m13"});check("diversity mission evaluates derived metric and grants500",r.player.missions.includes("m13")&&r.player.balance===500,r);
  seed({upgrades:["thumb","hooves","rhythm"],updated:Date.now()+60000});r=await action({kind:"mission",mission:"m15"});check("recipe mission evaluates derived metric",r.player.missions.includes("m15")&&r.player.balance===500,r);

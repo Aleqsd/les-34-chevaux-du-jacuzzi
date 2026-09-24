@@ -1,4 +1,4 @@
-import { BUILDINGS, COOKIE_MISSIONS, REBUILD_MISSIONS, rebuildMetric, rebuildReward, prestigeGain, autoClickRate, baseProduction, buildingPrice, clickPower, cookieMetric, type CookiePlayer, type Upgrade } from "@/lib/cookie-game";
+import { BUILDINGS, COOKIE_MISSIONS, REBUILD_MISSIONS, rebuildMetric, rebuildReward, prestigeGain, manualClickPower, autoClickRate, baseProduction, buildingPrice, clickPower, cookieMetric, type CookiePlayer, type Upgrade } from "@/lib/cookie-game";
 
 export function maxAffordableBuildings(p:CookiePlayer,index:number,balance=p.balance){
  let low=0,high=Math.max(0,1000-p.buildings[index]);
@@ -8,12 +8,12 @@ export function maxAffordableBuildings(p:CookiePlayer,index:number,balance=p.bal
 export function purchaseImpact(p:CookiePlayer,index:number,quantity:number){
  const before={...p,rushUntil:0},after={...before,buildings:[...p.buildings]};
  after.buildings[index]+=quantity;
- return {production:baseProduction(after)-baseProduction(before),click:clickPower(after,0)-clickPower(before,0)};
+ return {production:baseProduction(after)-baseProduction(before),click:manualClickPower(after,0)-manualClickPower(before,0)};
 }
 export function recipeImpact(p:CookiePlayer,u:Upgrade){
  if(p.upgrades.includes(u.id))return {production:0,click:0};
  const before={...p,rushUntil:0},after={...before,upgrades:[...p.upgrades,u.id]};
- return {production:baseProduction(after)-baseProduction(before),click:clickPower(after,0)-clickPower(before,0)};
+ return {production:baseProduction(after)-baseProduction(before),click:manualClickPower(after,0)-manualClickPower(before,0)};
 }
 export function steadyIncome(p:CookiePlayer,pilot:boolean){
  return baseProduction(p)+(pilot?autoClickRate(p.clicks)*clickPower({...p,rushUntil:0},0):0);
@@ -45,7 +45,8 @@ export function nextCookieGoal(p:CookiePlayer){
  const permanent=nextCookieMission(p),rebuild=nextRebuildMission(p);
  const a=permanent?{id:permanent.id,name:permanent.name,value:cookieMetric(p,permanent.metric),target:permanent.target,reward:permanent.reward,kind:"mission" as const}:undefined;
  const b=rebuild?{id:rebuild.id,name:rebuild.name,value:rebuildMetric(p,rebuild.metric),target:rebuild.target,reward:rebuildReward(p,rebuild.reward),kind:"rebuild" as const}:undefined;
- return b&&b.value>=b.target?b:a&&a.value>=a.target?a:b??a;
+ const active=p.contracts?.active,c=active?{id:String(active.id),name:active.kind==="produce"?"Le goûter ne s’arrête jamais":active.kind==="spend"?"La brigade se remet en selle":"Livraison venue des étoiles",value:active.progress,target:active.target,reward:active.reward,kind:"contractClaim" as const}:undefined;
+ return c&&c.value>=c.target?c:b&&b.value>=b.target?b:a&&a.value>=a.target?a:c??b??a;
 }
 export function prestigePreview(p:CookiePlayer){
  const gain=prestigeGain(p),current=1+p.prestige*.1,next=1+(p.prestige+gain)*.1,total=p.banked+p.runEarned;

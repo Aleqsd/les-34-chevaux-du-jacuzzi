@@ -12,3 +12,5 @@ This is a live shared site. Every update must preserve existing user progress an
 - Publishing updates the application; it must not clear its D1 bindings or recreate its Site project.
 
 - For every publication, increment package.json version. The build stamps lib/site-release.json before compiling; include that exact metadata in the pushed source and artifact. The footer date is the release preparation time, not a live clock.
+
+- Contract IDs/cycles, acceptance cooldowns, school cooldowns, career counters, and active contract progress survive prestige and publication. Contract/rebuilding rewards affect balance only. Count contract production by source, never from generic earn. Run verify-contracts.mjs after contract, school, or game economy changes.
