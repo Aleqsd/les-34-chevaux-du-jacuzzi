@@ -1,0 +1,21 @@
+Use case: stylized-concept
+Asset type: one ready-to-use raster avatar sprite sheet for the French friends planning app Les 34 Chevaux du Jacuzzi.
+
+Create ONE image of EXACTLY 12 unique kawaii animal avatars arranged in a STRICT 4-COLUMN by 3-ROW rectangular grid. Each of the twelve cells is EXACTLY SQUARE and identical in size. Overall image aspect ratio is exactly 4:3 (prefer 1536x1152). Every pixel belongs to a cell: ZERO gutter, ZERO gap, ZERO border, ZERO outer margin, ZERO rounded panel corners. Sharp perfectly straight horizontal and vertical joins. Four cells across, three cells down.
+
+STRICT CELL ORDER, read left to right, row by row:
+TOP ROW (4 cells): 1 tiny horse; 2 cat; 3 fox; 4 panda.
+MIDDLE ROW (4 cells): 5 axolotl; 6 rabbit; 7 otter; 8 penguin.
+BOTTOM ROW (4 cells): 9 baby dragon; 10 capybara; 11 frog; 12 unicorn.
+
+Each cell depicts one single charming front-facing animal head, with a tiny hint of shoulders, perfectly centered within ITS OWN square. Consistent camera, scale, face placement and friendly personality across all twelve avatars. Faces fill approximately 62% of cell width and leave generous safe padding on every edge; ears and horns must stay entirely within their own square, so each square can later be circular-cropped. Big glossy sparkling eyes, rounded shapes, soft tiny smile, sweet cheek blush. Clearly recognizable anatomy of each animal. Distinguish the horse from the unicorn: the tiny horse has no horn; the unicorn has a small clearly visible pearly horn and flowing pastel mane. Distinguish the otter from the capybara: otter has tiny rounded ears, a short broad round muzzle and fine whiskers; capybara has a broad long squared muzzle.
+
+Style: beautifully rendered polished 3D collectible toy figurines, soft iridescent ceramic and pearl finish with gentle cobalt-blue and acid-lime reflected highlights, high quality tactile material, soft studio illumination, cohesive sophisticated kawaii art direction. Each animal keeps a recognizable soft natural/pastel coat color, not all blue. This should feel playful, tender and premium.
+
+Backgrounds: each square has its own DISTINCT clean flat pastel color, subtle soft contact shadow behind the head only. Cell backgrounds in the strict same order:
+1 powder cobalt blue; 2 blush pink; 3 pale peach; 4 lavender;
+5 pale mint; 6 buttery cream; 7 seafoam; 8 pale sky cyan;
+9 pastel lilac; 10 pale sand; 11 pale acid lime; 12 very pale rose.
+Avoid strong gradients and busy background decorations.
+
+ABSOLUTE CONSTRAINTS: EXACTLY twelve animal heads total, exactly four columns and three rows, no omitted or additional animal, no duplicate species, no humans, no text, no letters, no digits, no labels, no logos, no watermark, no UI, no visible grid-line strokes, no gutters. The sprite sheet must be ready to crop into twelve equal square avatar images using a 4x3 grid.
