@@ -9,3 +9,7 @@
 ## GitHub icon
 
 GitHub mark from [Simple Icons](https://github.com/simple-icons/simple-icons), distributed under [CC0 1.0](https://github.com/simple-icons/simple-icons/blob/develop/LICENSE.md). GitHub is a trademark of GitHub, Inc.
+
+## Villa illustration
+
+The villa fallback illustration is original ImageGen artwork. Its generation prompt is recorded in docs/villa-night.prompt.txt. The interactive villa and cinema use original procedural Three.js geometry.

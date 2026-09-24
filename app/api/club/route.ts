@@ -11,6 +11,7 @@ const schema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("propose"), kind: z.enum(["movie", "activity"]), title: z.string().trim().min(1).max(200), author: name, url: safeUrl.default(""), movie: movieSchema.nullable().optional(), start: range.start.optional(), end: range.end.optional(), emoji:z.string().refine(isActivityEmoji,"Choisis un emoji dans la liste.").nullable().optional() }),
   z.object({ action: z.literal("vote"), id: z.string().uuid(), proposalId: z.string().uuid().optional(), slotId: z.string().uuid().optional(), author: name, value: z.union([z.literal(1), z.literal(-1)]) }),
   z.object({ action: z.literal("slot"), proposalId: z.string().uuid(), author: name, ...range }),
+  z.object({action:z.literal("moveActivity"),proposalId:z.string().uuid(),author:name,...range,expectedUpdated:z.string().datetime({offset:true}).nullable()}),
   z.object({ action:z.literal("editActivity"),proposalId:z.string().uuid(),author:name,title:z.string().trim().min(1).max(200),url:safeUrl,...range,emoji:z.string().refine(isActivityEmoji,"Choisis un emoji dans la liste.").nullable(),expectedUpdated:z.string().datetime({offset:true}).nullable() }),
 ]);
 export async function GET() {
@@ -24,7 +25,7 @@ export async function GET() {
       db.prepare("SELECT id,proposal_id AS proposalId,author,body,created FROM comments ORDER BY created,id"),
       db.prepare("SELECT id,proposal_id AS proposalId,start,end,selected_by AS selectedBy,created,updated_by AS updatedBy,updated FROM selected_plans ORDER BY start"),
       db.prepare("SELECT plan_id AS planId,author_key AS authorKey,author,attending FROM plan_participants ORDER BY author_key"),
-      db.prepare("SELECT author_key AS authorKey,author,avatar,image_url AS imageUrl FROM profiles"),
+      db.prepare("SELECT author_key AS authorKey,author,avatar,image_url AS imageUrl,hat,eyewear,floatie,animated FROM profiles"),
     ]);
     return Response.json({ proposals: (result[0].results as Record<string,unknown>[]).map(p => ({ ...p, movie: p.movie ? JSON.parse(p.movie as string) : null })), votes: result[1].results, slots: result[2].results, activityDetails:result[3].results, comments:result[4].results, plans:result[5].results, participants:result[6].results, profiles:result[7].results }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) { console.error("club:read", error); return Response.json({ error: "Impossible de charger le QG. Réessaie dans un instant." }, { status: 503 }); }
@@ -53,6 +54,13 @@ export async function POST(request: Request) {
       const update=await db.prepare("UPDATE proposals SET title=?,url=?,start=?,end=?,emoji=?,updated_by=?,updated=? WHERE id=? AND updated IS ?").bind(p.title,p.url,p.start,p.end,p.emoji,p.author,now,id,p.expectedUpdated).run();
       if(!update.meta.changes)throw new Error("Cette activité vient d’être modifiée. Ferme puis rouvre sa fiche pour récupérer les dernières informations.");
       proposal={id,kind:"activity",title:p.title,url:p.url,start:p.start,end:p.end,emoji:p.emoji,author:String(target.author),created:String(target.created),movie:null,updatedBy:p.author,updated:now};
+    } else if(p.action==="moveActivity"){
+      validateRange(p.start,p.end);
+      const target=await db.prepare("SELECT * FROM proposals WHERE id=?").bind(p.proposalId).first();
+      if(target?.kind!=="activity")throw new Error("Cette activité n’existe plus.");
+      const update=await db.prepare("UPDATE proposals SET start=?,end=?,updated_by=?,updated=? WHERE id=? AND updated IS ?").bind(p.start,p.end,p.author,now,p.proposalId,p.expectedUpdated).run();
+      if(!update.meta.changes)throw new Error("Cette activité vient d’être modifiée. Le planning va se synchroniser ; recommence avec le dernier créneau.");
+      id=p.proposalId;proposal={...target,id,kind:"activity",movie:null,start:p.start,end:p.end,updatedBy:p.author,updated:now} as Proposal;
     } else if (p.action === "slot") {
       validateRange(p.start,p.end);
       const target = await db.prepare("SELECT kind FROM proposals WHERE id=?").bind(p.proposalId).first();

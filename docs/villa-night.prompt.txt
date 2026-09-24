@@ -1,0 +1,10 @@
+Use case: stylized-concept
+Asset type: landscape fallback illustration behind an interactive 3D scene on a private friend-group website. This is only a rendered scene asset, not a UI mockup.
+Primary request: a playful miniature modern villa, seen in a three-quarter isometric open-front cutaway view. Exactly three clearly separated side-by-side zones: on the left an intimate open-front movie lounge with dark blue couches and one large glowing cinema screen; in the center an outdoor terrace with a table; on the right a round bubbling jacuzzi containing a tiny shiny chrome horse floating on a neon lime inflatable ring.
+Scene/backdrop: night setting, the entire villa sits on a floating dark navy architectural plinth against a seamless very dark navy background.
+Style/medium: premium toy diorama, polished high-end 3D architectural miniature render, rich realistic miniature materials, charming and sophisticated.
+Composition/framing: landscape 1536x1024, three-quarter isometric camera looking down enough to see all three zones clearly. Full villa and full plinth visible, centered and large enough to read every zone, with generous clean dark space surrounding the diorama. Three zones are equally readable. The left movie lounge is open toward the camera so its couches and screen are visible.
+Lighting/mood: nocturnal indigo and blue architectural lighting, warm welcoming screen glow, carefully placed neon chartreuse accents, luminous water with bubbles and reflections.
+Color palette: near-black navy, deep blue, indigo, restrained bright chartreuse lime.
+Materials/textures: miniature smooth architectural concrete, brushed metal, plush sofa fabric, realistic blue water, highly reflective chrome horse, glossy lime inflatable ring.
+Constraints: no humans, no people, no text, no lettering, no numbers, no labels, no logos, no UI, no watermark. Do not crop any part of the villa or plinth. Do not add extra rooms or unrelated objects.

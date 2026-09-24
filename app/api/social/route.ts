@@ -1,6 +1,7 @@
 import { database } from "@/lib/database";
 import { z } from "zod";
 import { isActivityEmoji } from "@/lib/activity-emoji";
+import { HATS, EYEWEAR } from "@/lib/appearance";
 const author=z.string().trim().min(1,"Choisis ton prénom.").max(40);
 const uuid=z.string().uuid();
 const schema=z.discriminatedUnion("action",[
@@ -10,7 +11,7 @@ const schema=z.discriminatedUnion("action",[
   z.object({action:z.literal("select"),id:uuid,proposalId:uuid,author,start:z.string().datetime({offset:true}),end:z.string().datetime({offset:true})}),
   z.object({action:z.literal("editPlan"),planId:uuid,author,start:z.string().datetime({offset:true}),end:z.string().datetime({offset:true}),expectedUpdated:z.string().datetime({offset:true}).nullable()}),
   z.object({action:z.literal("attend"),planId:uuid,author,attending:z.boolean()}),
-  z.object({action:z.literal("profile"),author,avatar:z.number().int().min(0).max(35),imageUrl:z.string().trim().max(1000).refine(s=>!s||(()=>{try{return new URL(s).protocol==="https:";}catch{return false;}})(),"Utilise une image avec une URL https://.")}),
+  z.object({action:z.literal("profile"),author,avatar:z.number().int().min(0).max(35),hat:z.string().refine(v=>HATS.some(h=>h.id===v)).optional(),eyewear:z.string().refine(v=>EYEWEAR.some(h=>h.id===v)).optional(),floatie:z.boolean().optional(),animated:z.boolean().optional(),imageUrl:z.string().trim().max(1000).refine(s=>!s||(()=>{try{return new URL(s).protocol==="https:";}catch{return false;}})(),"Utilise une image avec une URL https://.")}),
 ]);
 export async function POST(request:Request){
   try{
@@ -42,7 +43,10 @@ export async function POST(request:Request){
       const key=p.author.normalize("NFKC").toLocaleLowerCase("fr");
       await db.prepare("INSERT INTO plan_participants (plan_id,author_key,author,attending) VALUES (?,?,?,?) ON CONFLICT(plan_id,author_key) DO UPDATE SET author=excluded.author,attending=excluded.attending").bind(p.planId,key,p.author,p.attending?1:0).run();
     }
-    if(p.action==="profile")await db.prepare("INSERT INTO profiles (author_key,author,avatar,image_url) VALUES (?,?,?,?) ON CONFLICT(author_key) DO UPDATE SET author=excluded.author,avatar=excluded.avatar,image_url=excluded.image_url").bind(p.author.normalize("NFKC").toLocaleLowerCase("fr"),p.author,p.avatar,p.imageUrl).run();
+    if(p.action==="profile"){
+      const key=p.author.normalize("NFKC").toLocaleLowerCase("fr");
+      await db.prepare("INSERT INTO profiles (author_key,author,avatar,image_url,hat,eyewear,floatie,animated) VALUES (?,?,?,?,COALESCE(?,'none'),COALESCE(?,'none'),COALESCE(?,0),COALESCE(?,1)) ON CONFLICT(author_key) DO UPDATE SET author=excluded.author,avatar=excluded.avatar,image_url=excluded.image_url,hat=COALESCE(?,profiles.hat),eyewear=COALESCE(?,profiles.eyewear),floatie=COALESCE(?,profiles.floatie),animated=COALESCE(?,profiles.animated)").bind(key,p.author,p.avatar,p.imageUrl,p.hat??null,p.eyewear??null,p.floatie===undefined?null:Number(p.floatie),p.animated===undefined?null:Number(p.animated),p.hat??null,p.eyewear??null,p.floatie===undefined?null:Number(p.floatie),p.animated===undefined?null:Number(p.animated)).run();
+    }
     // Return the stored row, including on a retried UUID. A failed follow-up
     // refresh must never hide a write that the server has already confirmed.
     let collection="",record:unknown;
@@ -51,7 +55,7 @@ export async function POST(request:Request){
     if(p.action==="details"){collection="activityDetails";record=await db.prepare("SELECT proposal_id AS proposalId,cost_cents AS costCents,address,travel,capacity,pricing,notes,updated_by AS updatedBy,updated FROM activity_details WHERE proposal_id=?").bind(p.proposalId).first();}
     if(p.action==="select"||p.action==="editPlan"){collection="plans";record=await db.prepare("SELECT id,proposal_id AS proposalId,start,end,selected_by AS selectedBy,created,updated_by AS updatedBy,updated FROM selected_plans WHERE id=?").bind(p.action==="select"?p.id:p.planId).first();}
     if(p.action==="attend"){collection="participants";record=await db.prepare("SELECT plan_id AS planId,author_key AS authorKey,author,attending FROM plan_participants WHERE plan_id=? AND author_key=?").bind(p.planId,p.author.normalize("NFKC").toLocaleLowerCase("fr")).first();}
-    if(p.action==="profile"){collection="profiles";record=await db.prepare("SELECT author_key AS authorKey,author,avatar,image_url AS imageUrl FROM profiles WHERE author_key=?").bind(p.author.normalize("NFKC").toLocaleLowerCase("fr")).first();}
+    if(p.action==="profile"){collection="profiles";record=await db.prepare("SELECT author_key AS authorKey,author,avatar,image_url AS imageUrl,hat,eyewear,floatie,animated FROM profiles WHERE author_key=?").bind(p.author.normalize("NFKC").toLocaleLowerCase("fr")).first();}
     return Response.json({ok:true,collection,record,...("id" in p?{id:p.id}:{})},{status:201});
   }catch(error){
     if(error instanceof z.ZodError)return Response.json({error:error.issues[0]?.message||"Vérifie les informations."},{status:400});

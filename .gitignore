@@ -50,5 +50,5 @@ next-env.d.ts
 /outputs/
 /work/
 
-# Deployment identity belongs to each contributor.
-/.openai/
+# Sites owner metadata stays local
+.openai/
