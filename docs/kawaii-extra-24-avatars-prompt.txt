@@ -1,0 +1,24 @@
+Use case: stylized-concept
+Asset type: ONE production avatar sprite sheet, an extension of a kawaii animal avatar collection for a French friends app.
+
+LAYOUT IS CRITICAL: EXACTLY 24 unique animal avatars, in a perfectly regular STRICT GRID OF SIX COLUMNS AND FOUR ROWS. Six animals across every row, four complete rows. Each of the 24 cells is EXACTLY SQUARE and equal in size. Overall image aspect ratio 3:2; target 1536 pixels wide by 1024 pixels high, each cell 256x256 pixels. FULL-BLEED GRID: no gutters, no gaps, no visible grid stroke, no padding around the whole sheet, no rounded cell corners. Each square joins the next exactly at a sharp straight edge. Render all 24 cells fully and equally.
+
+STRICT SPECIES ORDER, left to right, row by row:
+ROW ONE, six cells: 1 TIGER; 2 LION; 3 BEAR; 4 KOALA; 5 RACCOON; 6 WOLF.
+ROW TWO, six cells: 7 DOG; 8 HAMSTER; 9 SQUIRREL; 10 HEDGEHOG; 11 SLOTH; 12 ALPACA.
+ROW THREE, six cells: 13 OWL; 14 BABY CHICK; 15 DUCK; 16 FLAMINGO; 17 PARROT; 18 BAT.
+ROW FOUR, six cells: 19 TURTLE; 20 OCTOPUS; 21 WHALE; 22 SHARK; 23 BEE; 24 BABY DINOSAUR.
+
+Every cell is a close frontal head portrait of exactly one cute animal, tiny hint of shoulders or upper body only, centered perfectly within ITS OWN square, same portrait scale throughout. Bright friendly big glossy eyes and soft tiny smile. Keep head, ears and beak inside its cell with safe padding; no overlap between cells. Heads fill about 68% of each square width so they remain recognizable when displayed as a small circular avatar. No accessories.
+
+Make the species VERY DISTINCT through clear unmistakable silhouettes and traits:
+tiger = orange with dark stripes and round ears; lion = golden with a full rounded mane; bear = brown with small round ears; koala = gray with large fluffy round ears and oval black nose; raccoon = gray black eye mask; wolf = silver gray with pointed ears and long muzzle.
+dog = soft cream golden puppy with floppy ears; hamster = golden-white chubby cheeks and tiny pink nose; squirrel = russet with ear tufts and small front incisors; hedgehog = cream face with rounded brown spiny halo; sloth = tan with dark drooping eye patches; alpaca = fluffy cream head with long upright ears and elongated muzzle.
+owl = rounded brown head with large eye discs; chick = fluffy yellow down, tiny orange pointed beak; duck = white head with a broad flat orange bill; flamingo = pink head with clearly bent black-tipped beak and a little long neck; parrot = turquoise green and coral red with a curved pale hooked bill; bat = lavender gray with very large pointed ears, tiny muzzle and small folded wing hints.
+turtle = soft green round head with a little shell behind neck; octopus = pastel pink round head with a few short cute curled tentacles at lower edge; whale = blue smooth broad round head and tiny top blowhole with one tiny water droplet; shark = blue-gray head with white lower face, tiny dorsal fin and harmless smiling little triangular teeth; bee = bright warm yellow round head with dark stripes, antennae and tiny translucent wing hints; dinosaur = adorable mint-green baby triceratops with rounded frill and three tiny gentle horns.
+
+ART DIRECTION: exceptionally cute premium 3D collectible figurines, polished pearlescent ceramic and softly tactile fur where appropriate, gentle iridescent cobalt-blue and pastel lime reflected accents, soft studio lighting, soft cheek blush, friendly front-facing expressions. Consistent sophisticated kawaii collection. Preserve natural species colors in softened pastel tones, do not make every animal blue.
+
+Each square has its own clean flat pastel background. Alternate powder cobalt blue, pale pink, pale mint, lavender, butter yellow, pale peach, seafoam, pale rose, pastel cyan and pale lime across the grid. Backgrounds must be distinct between touching cells. Subtle soft contact shadow allowed, no background objects.
+
+ABSOLUTE CONSTRAINTS: exactly twenty-four animals total, exactly SIX COLUMNS by FOUR ROWS, no extra cells, no missing cells, no duplicated species, no merged animals, no extra limbs, no human, no text, no letters, no numbers, no labels, no logos, no watermark, no UI, no mockup. One flat image sprite sheet.

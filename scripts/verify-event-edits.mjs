@@ -1,0 +1,26 @@
+import assert from 'node:assert/strict';
+import {writeFileSync} from 'node:fs';
+const origin=process.argv[2]||'http://127.0.0.1:5173';
+if(!['127.0.0.1','localhost'].includes(new URL(origin).hostname))throw new Error('Local tests only');
+const checks=[];const author='Test API';
+async function post(path,body,status=201){const response=await fetch(origin+path,{method:'POST',headers:{Origin:origin,'Content-Type':'application/json'},body:JSON.stringify(body)});const data=await response.json();assert.equal(response.status,status,JSON.stringify(data));return data;}
+const club=(body,status)=>post('/api/club',body,status),social=(body,status)=>post('/api/social',body,status);
+const read=async()=>{const r=await fetch(origin+'/api/club');assert.equal(r.status,200);return r.json();};
+const times={start:'2026-09-24T14:00:00+02:00',end:'2026-09-24T16:00:00+02:00'};
+const activity=await club({action:'propose',kind:'activity',title:'Test API — Karting',url:'https://example.com/karting',author,emoji:'🏎️',...times});assert.equal(activity.proposal.emoji,'🏎️');
+const vote={action:'vote',id:crypto.randomUUID(),proposalId:activity.id,author,value:1};await club(vote);
+const comment={action:'comment',id:crypto.randomUUID(),proposalId:activity.id,author,body:'On y va ensemble !'};await social(comment);
+const slot=await club({action:'slot',proposalId:activity.id,author,start:'2026-09-25T17:00:00+02:00',end:'2026-09-25T19:00:00+02:00'});
+const plan={action:'select',id:crypto.randomUUID(),proposalId:activity.id,author,...times};await social(plan);await social({action:'attend',planId:plan.id,author,attending:true});
+const baseline=await read();
+const edit={action:'editActivity',proposalId:activity.id,author:'Test local',title:'Test API — Karting du crew',url:'https://example.com/nouveau-lieu',start:'2026-09-25T15:30:00+02:00',end:'2026-09-25T17:00:00+02:00',emoji:'🎉',expectedUpdated:null};
+const changed=await club(edit);assert.equal(changed.id,activity.id);assert.equal(changed.proposal.author,author);assert.equal(changed.proposal.updatedBy,'Test local');assert.equal(changed.proposal.emoji,'🎉');
+let current=await read();assert.deepEqual(current.votes,baseline.votes);assert.deepEqual(current.comments,baseline.comments);assert.deepEqual(current.slots,baseline.slots);assert.deepEqual(current.plans,baseline.plans);assert.deepEqual(current.participants,baseline.participants);assert.equal(current.proposals.filter(p=>p.id===activity.id).length,1);checks.push('Another declared name edits the same activity; original author, votes, comments, alternative slots, retained plans and participants remain intact');
+await club({...edit,title:'Stale edit'},400);checks.push('Stale activity editor cannot overwrite a newer change');
+const updated=changed.proposal.updated;
+await club({...edit,expectedUpdated:updated,url:'javascript:alert(1)'},400);await club({...edit,expectedUpdated:updated,end:'2026-09-25T14:00:00+02:00'},400);await club({...edit,expectedUpdated:updated,start:'2026-10-01T14:00:00+02:00',end:'2026-10-01T16:00:00+02:00'},400);await club({...edit,expectedUpdated:updated,emoji:'not an emoji'},400);
+checks.push('Editing validates URLs, trip dates, time order and emoji on the server');
+const emoji=await social({action:'activityEmoji',proposalId:activity.id,author:'Test local',emoji:'🏄‍♀️'});assert.equal(emoji.record.emoji,'🏄‍♀️');assert.equal(emoji.record.title,edit.title);await social({action:'activityEmoji',proposalId:activity.id,author,emoji:null});current=await read();assert.equal(current.proposals.find(p=>p.id===activity.id).emoji,null);checks.push('Composite emoji persists without truncation; automatic mode can be restored without touching other fields');
+const editedPlan=await social({action:'editPlan',planId:plan.id,author:'Test local',start:'2026-09-26T10:00:00+02:00',end:'2026-09-26T12:00:00+02:00',expectedUpdated:null});assert.equal(editedPlan.record.id,plan.id);assert.equal(editedPlan.record.updatedBy,'Test local');await social({action:'editPlan',planId:plan.id,author,start:'2026-09-26T11:00:00+02:00',end:'2026-09-26T13:00:00+02:00',expectedUpdated:null},400);current=await read();assert.equal(current.plans.find(p=>p.id===plan.id).start,'2026-09-26T10:00:00+02:00');assert.equal(current.proposals.find(p=>p.id===activity.id).start,edit.start);assert.deepEqual(current.participants,baseline.participants);assert.equal(current.slots.find(s=>s.id===slot.id).start,'2026-09-25T17:00:00+02:00');checks.push('Retained-plan time changes preserve its ID and participants; source and alternatives unchanged; stale update rejected');
+const film=await club({action:'propose',kind:'movie',title:'Test API film',author});await club({...edit,proposalId:film.id,expectedUpdated:null},400);await social({action:'activityEmoji',proposalId:film.id,author,emoji:'🎉'},400);checks.push('Activity edits and emoji updates reject movie targets');
+const report={passed:true,checkedAt:new Date().toISOString(),checks,fixtures:{activityId:activity.id,planId:plan.id}};writeFileSync('.sites-runtime/event-edit-validation.json',JSON.stringify(report,null,2));console.log(JSON.stringify(report,null,2));

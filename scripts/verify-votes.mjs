@@ -1,0 +1,53 @@
+import assert from 'node:assert/strict';
+import { readFileSync, writeFileSync } from 'node:fs';
+import { DatabaseSync } from 'node:sqlite';
+const origin=process.argv[2]||'http://127.0.0.1:5173';
+if(!['127.0.0.1','localhost'].includes(new URL(origin).hostname))throw Error('Local tests only');
+const checks=[];
+async function post(body,status=201){const r=await fetch(origin+'/api/club',{method:'POST',headers:{Origin:origin,'Content-Type':'application/json'},body:JSON.stringify(body)});const data=await r.json();assert.equal(r.status,status,JSON.stringify(data));return data;}
+const read=async()=>{const r=await fetch(origin+'/api/club');assert.equal(r.status,200);return r.json();};
+const activity=await post({action:'propose',kind:'activity',title:'Test API — votes uniques',author:'Test API',url:'https://example.com',start:'2026-09-24T14:00:00+02:00',end:'2026-09-24T16:00:00+02:00'});
+const base={action:'vote',id:crypto.randomUUID(),proposalId:activity.id,author:'Test API',value:1};
+const original=(await post(base)).vote;
+assert.equal((await post(base)).vote.id,original.id);
+assert.equal((await post({...base,id:crypto.randomUUID()})).vote.id,original.id);
+for(const value of [-1,1]){const result=await post({...base,id:crypto.randomUUID(),value});assert.equal(result.vote.id,original.id);assert.equal(result.vote.value,value);const rows=(await read()).votes.filter(v=>v.proposalId===activity.id);assert.equal(rows.length,1);assert.equal(rows[0].value,value);}
+checks.push('Same choice/retry stays unique; opposite replaces it; response returns stable stored ID');
+await Promise.all(Array.from({length:8},(_,i)=>post({...base,id:crypto.randomUUID(),author:i%2?' TEST API ':'test api',value:i%2?1:-1})));
+await post({...base,id:crypto.randomUUID(),value:-1});
+let rows=(await read()).votes.filter(v=>v.proposalId===activity.id);assert.equal(rows.length,1);assert.equal(rows[0].value,-1);
+checks.push('Eight concurrent votes remain one row; final sequential choice persists');
+for(const author of [' ÉLODIE ','E\u0301lodie','Ａlex','alex','Elodie'])await post({...base,id:crypto.randomUUID(),author});
+rows=(await read()).votes.filter(v=>v.proposalId===activity.id);assert.deepEqual(rows.map(v=>v.authorKey).sort(),['alex','elodie','test api','élodie']);
+checks.push('Trim, case and NFKC equivalent names merge; distinct accents stay distinct');
+const slots=[];for(const day of ['25','26'])slots.push(await post({action:'slot',proposalId:activity.id,author:'Test API',start:`2026-09-${day}T14:00:00+02:00`,end:`2026-09-${day}T16:00:00+02:00`}));
+for(const slot of slots)await post({action:'vote',id:crypto.randomUUID(),slotId:slot.id,author:'Test API',value:1});
+await post({action:'vote',id:crypto.randomUUID(),slotId:slots[0].id,author:'TEST API',value:-1});
+const state=await read();assert.equal(state.votes.find(v=>v.proposalId===activity.id&&v.authorKey==='test api').value,-1);for(let i=0;i<2;i++){const votes=state.votes.filter(v=>v.slotId===slots[i].id);assert.equal(votes.length,1);assert.equal(votes[0].value,i===0?-1:1);}
+await post({...base,id:crypto.randomUUID(),slotId:slots[0].id},400);await post({action:'vote',id:crypto.randomUUID(),author:'Test API',value:1},400);
+checks.push('Activity and two alternative slots are independent; ambiguous/missing targets rejected');
+// Exercise the exact data migration in a fresh in-memory SQLite database.
+const db=new DatabaseSync(':memory:');
+db.exec('CREATE TABLE votes(id text PRIMARY KEY,proposal_id text,slot_id text,author text,value integer,created text);');
+const insert=db.prepare('INSERT INTO votes VALUES (?,?,?,?,?,?)');
+insert.run('early','p',null,' Alex ',1,'2026-09-23T09:00:00Z');
+insert.run('newer','p',null,'ALEX',-1,'2026-09-23T10:00:00Z');
+insert.run('tie-last','p',null,'alex',1,'2026-09-23T10:00:00Z');
+insert.run('other-person','p',null,'Bimbo',-1,'2026-09-23T10:00:00Z');
+insert.run('slot-early',null,'s','Alex',1,'2026-09-23T08:00:00Z');
+insert.run('slot-last',null,'s','ALEX',-1,'2026-09-23T10:00:00Z');
+db.exec(readFileSync(new URL('../drizzle/0005_flimsy_northstar.sql',import.meta.url),'utf8'));
+assert.deepEqual(db.prepare('SELECT id FROM votes ORDER BY id').all().map(v=>v.id),['other-person','slot-last','tie-last']);
+assert.equal(db.prepare('SELECT COUNT(*) AS n FROM vote_cleanup_backup').get().n,6);
+assert.throws(()=>db.prepare('INSERT INTO votes VALUES (?,?,?,?,?,?,?)').run('duplicate','p',null,'Alex',1,'later','alex'),/UNIQUE/);
+assert.throws(()=>db.prepare('INSERT INTO votes VALUES (?,?,?,?,?,?,?)').run('duplicate-slot',null,'s','Alex',1,'later','alex'),/UNIQUE/);
+db.prepare('INSERT INTO votes VALUES (?,?,?,?,?,?,?)').run('legacy-gap','p',null,'Alex',-1,'2026-09-24T00:00:00Z','');
+db.exec(readFileSync(new URL('../drizzle/0006_vote_guard.sql',import.meta.url),'utf8'));
+assert.equal(db.prepare("SELECT COUNT(*) AS n FROM votes WHERE proposal_id='p' AND author_key='alex'").get().n,1);
+assert.equal(db.prepare("SELECT id FROM votes WHERE proposal_id='p' AND author_key='alex'").get().id,'legacy-gap');
+assert.equal(db.prepare('SELECT COUNT(*) AS n FROM vote_cleanup_backup').get().n,7);
+assert.throws(()=>db.prepare('INSERT INTO votes VALUES (?,?,?,?,?,?,?)').run('old-api','new-target',null,'Bimbo',1,'later',''),/normalized voter/);
+assert.throws(()=>db.exec("UPDATE votes SET author_key=''"),/normalized voter/);
+db.close();checks.push('Historical cleanup keeps newest/date-tie row and every original backup; both uniqueness constraints enforced; rolling-deploy legacy writes reconciled and blocked');
+const report={passed:true,checkedAt:new Date().toISOString(),checks,activityId:activity.id};
+writeFileSync('.sites-runtime/votes-validation.json',JSON.stringify(report,null,2));console.log(JSON.stringify(report,null,2));

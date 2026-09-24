@@ -9,11 +9,12 @@ Le QG du séjour du **20 au 27 septembre 2026**, pour Alex, Bimbo, Penelop, Telr
 ## Dans le jacuzzi
 
 - QG 3D : cheval chromé animé, eau réactive au pointeur, bouée, transitions rideau et vague. Three.js est chargé à la demande ; la scène s’arrête hors écran et lorsque l’onglet est masqué.
-- Onze cartes holographiques à retourner avec les contributions par prénom. Douze avatars kawaii au choix, ou image HTTPS personnalisée.
+- Onze cartes holographiques à retourner avec les contributions par prénom. 36 avatars kawaii au choix, ou image HTTPS personnalisée.
 - Cinéma : recherche TMDB rapide en français, affiches, année, genres, durée, réalisation. Aucun synopsis ni bande-annonce. Ajout manuel possible.
-- Votes pour/contre et détail nominatif. Un même prénom peut voter plusieurs fois. Chaque clic compte ; une répétition réseau du même envoi n’est pas comptée deux fois.
-- Duels entre deux films proposés, votes séparés des votes pour/contre, jauges et choix nominatifs.
+- Votes pour/contre avec détail nominatif : un seul vote par prénom et par proposition ou créneau. Changer d’avis remplace le précédent choix. La casse, les espaces autour du prénom et les variantes Unicode équivalentes sont normalisés.
 - Activités : nom, lien HTTP(S), créneau et alternatives horaires soumises au vote. Suggestions Escape Game et Karting.
+- Tout le crew peut modifier le nom, le lien, l’emoji et les horaires des activités, ainsi que les créneaux des rendez-vous retenus. Votes, discussions et présences sont conservés. Les modifications concurrentes sont signalées.
+- Emoji suggéré selon le nom pour chaque activité, modifiable et partagé. Visible dans le planning, les cartes, les fiches et les affiches.
 - Fiches pratiques : tarif, adresse, trajet, capacité, conditions et notes. La durée vient du créneau ; les informations inconnues restent inconnues.
 - Discussions chronologiques sur chaque proposition, avec brouillon conservé en cas d’erreur.
 - Plans retenus avec créneau explicite, compte à rebours d’annonce, lien partageable, affiche PNG et confirmations de présence distinctes des votes.
@@ -32,6 +33,10 @@ npm run build
 node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0000_fat_gamora.sql
 node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0001_slimy_salo.sql
 node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0002_wealthy_blur.sql
+node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0003_flashy_grim_reaper.sql
+node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0004_cooing_wendell_rand.sql
+node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0005_flimsy_northstar.sql
+node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0006_vote_guard.sql
 npm run dev
 ```
 
@@ -45,9 +50,11 @@ npm run build
 # Avec le serveur local en cours :
 node scripts/verify-api.mjs
 node scripts/verify-social.mjs
+node scripts/verify-event-edits.mjs
+node scripts/verify-votes.mjs
 ```
 
-Les tests refusent une URL hors localhost/127.0.0.1 et créent des fixtures sous **Test API** en local. Ils couvrent recherche TMDB, propositions, URL et dates, votes répétés, idempotence, alternatives, duels, commentaires, fiches pratiques, rendez-vous, présences, avatars et rejet des écritures d’une autre origine.
+Les tests refusent une URL hors localhost/127.0.0.1 et créent des fixtures sous **Test API** en local. Ils couvrent recherche TMDB, propositions, URL et dates, votes uniques et concurrents, normalisation des prénoms, nettoyage historique, alternatives, édition collaborative, commentaires, fiches pratiques, rendez-vous, présences, avatars et rejet des écritures d’une autre origine.
 
 Vérifie aussi les petits écrans, le clavier, les erreurs réseau et la réduction des animations. WebMCP expose `read_crew_plans` et `start_movie_proposal` (ouvre uniquement la recherche).
 
@@ -57,7 +64,7 @@ Le site utilise **ChatGPT Sites / Cloudflare Workers et D1**, sans VPS. `TMDB_AP
 
 Le script local crée `.openai/hosting.json` avec les seules liaisons de stockage de développement. Publier son propre exemplaire demande son propre projet Sites ou ses propres ressources Cloudflare. Les contributions GitHub ne déclenchent pas automatiquement un déploiement du site du crew.
 
-Les prénoms sont déclaratifs et les votes répétés sont intentionnels : ce projet est conçu pour un groupe d’amis, sans garantie d’identité unique.
+Les prénoms restent déclaratifs, sans compte ni vérification d’identité. La base impose un vote par prénom normalisé et par cible. La migration 0005 conserve le choix le plus récent (date, puis ordre d’insertion) et archive les lignes originales dans vote_cleanup_backup, non exposée par l’API. Les auteurs présents avant cette migration ont été audités comme ASCII ; un fork contenant déjà des noms Unicode doit adapter le backfill à la normalisation JavaScript.
 
 ## Crédits
 

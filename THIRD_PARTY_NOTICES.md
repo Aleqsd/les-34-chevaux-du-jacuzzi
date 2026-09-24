@@ -5,3 +5,7 @@
 - Les affiches et informations de films sont fournies à la demande par [TMDB](https://www.themoviedb.org/). Elles ne sont pas redistribuées dans ce dépôt et ne relèvent pas de sa licence MIT. This product uses the TMDB API but is not endorsed or certified by TMDB.
 - Icônes Lucide, sous licence ISC ; Three.js sous licence MIT. Les autres dépendances conservent leurs licences respectives dans leurs paquets.
 - Polices Manrope et Barlow Condensed, disponibles via Google Fonts sous SIL Open Font License.
+
+## GitHub icon
+
+GitHub mark from [Simple Icons](https://github.com/simple-icons/simple-icons), distributed under [CC0 1.0](https://github.com/simple-icons/simple-icons/blob/develop/LICENSE.md). GitHub is a trademark of GitHub, Inc.

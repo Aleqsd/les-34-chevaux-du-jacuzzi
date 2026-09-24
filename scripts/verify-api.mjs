@@ -13,9 +13,9 @@ assert.equal(film.proposal.id,film.id);assert.equal(film.proposal.movie.id,'9421
 const movieVote={action:'vote',id:crypto.randomUUID(),proposalId:film.id,author,value:1};
 await post(movieVote);await post({...movieVote,id:crypto.randomUUID()});await post({...movieVote,id:crypto.randomUUID(),value:-1});
 const movieState=await read('/api/club');assert.equal(movieState.proposals.find(p=>p.id===film.id).movie.id,'9421');
-assert.equal(movieState.votes.filter(v=>v.proposalId===film.id&&v.author===author&&v.value===1).length,2);
+assert.equal(movieState.votes.filter(v=>v.proposalId===film.id&&v.author===author&&v.value===1).length,0);
 assert.equal(movieState.votes.filter(v=>v.proposalId===film.id&&v.author===author&&v.value===-1).length,1);
-checks.push('Movie creation returns confirmed persisted proposal; named for/against votes preserve repeated counts');
+checks.push('Movie creation returns confirmed persisted proposal; same-name votes replace the previous choice');
 const activity=await post({action:'propose',kind:'activity',title:'TEST API — activité',url:'https://example.com/activite',author,start:'2026-09-24T14:00:00+02:00',end:'2026-09-24T16:00:00+02:00'});
 await post({action:'propose',kind:'activity',title:'Invalid URL',url:'javascript:alert(1)',author,start:'2026-09-24T14:00:00+02:00',end:'2026-09-24T16:00:00+02:00'},400);
 await post({action:'propose',kind:'activity',title:'Invalid dates',url:'https://example.com',author,start:'2026-09-28T14:00:00+02:00',end:'2026-09-28T16:00:00+02:00'},400);
@@ -26,11 +26,11 @@ const slot=await post({action:'slot',proposalId:activity.id,author,start:'2026-0
 await post({action:'vote',id:crypto.randomUUID(),slotId:slot.id,author,value:1});
 await post({action:'vote',id:crypto.randomUUID(),proposalId:crypto.randomUUID(),author,value:1},400);
 const state=await read('/api/club');
-assert.equal(state.votes.filter(v=>v.proposalId===activity.id&&v.value===1).length,2);
+assert.equal(state.votes.filter(v=>v.proposalId===activity.id&&v.value===1).length,0);
 assert.equal(state.votes.filter(v=>v.proposalId===activity.id&&v.value===-1).length,1);
 assert.equal(state.votes.filter(v=>v.slotId===slot.id).length,1);
 assert.equal(state.proposals.find(p=>p.id===activity.id).start,'2026-09-24T14:00:00+02:00');
-checks.push('Same-name repeat votes, idempotent request retries, separate alternative-slot votes, original slot preserved, independent client readback');
+checks.push('Same-name unique votes, repeat requests stay unique, separate alternative-slot votes, original slot preserved, independent client readback');
 const denied=await fetch(origin+'/api/club',{method:'POST',headers:{Origin:'https://example.net','Content-Type':'application/json'},body:JSON.stringify(vote)});assert.equal(denied.status,403);checks.push('Cross-origin writes rejected');
 const timing=[];for(let i=0;i<3;i++){const start=performance.now();await read('/api/movies?q=Le%20D%C3%AEner%20de%20cons');timing.push(Math.round(performance.now()-start));}
 const report={passed:true,checkedAt:new Date().toISOString(),checks,warmMovieSearchMs:timing,localFixtureAuthor:author};

@@ -22,6 +22,34 @@
       "when": 1790229577734,
       "tag": "0002_wealthy_blur",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1790235384008,
+      "tag": "0003_flashy_grim_reaper",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1790235584765,
+      "tag": "0004_cooing_wendell_rand",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1790235960688,
+      "tag": "0005_flimsy_northstar",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1790236494598,
+      "tag": "0006_vote_guard",
+      "breakpoints": true
     }
   ]
 }
