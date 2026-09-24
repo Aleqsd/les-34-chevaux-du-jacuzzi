@@ -50,4 +50,4 @@ next-env.d.ts
 /outputs/
 /work/
 
-/.openai/
+/.openai/hosting.json

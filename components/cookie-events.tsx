@@ -1,6 +1,6 @@
 "use client";
 import {useCallback,useEffect,useRef,useState,type CSSProperties} from "react";
-import {Cookie,Gift,Sparkles} from "lucide-react";
+import {Cookie,Gift,Sparkles,Flame,Ticket,CloudRain} from "lucide-react";
 import {cookieEvent,EVENT_VISIBLE_MS} from "@/lib/cookie-game";
 export function useCookieSounds(){
  const [enabled,setEnabled]=useState(true),context=useRef<AudioContext|null>(null),enabledRef=useRef(true),voices=useRef(new Set<OscillatorNode>());
@@ -18,6 +18,6 @@ export function CookieFlyby({eventAt,now,claiming,blocked,onCatch,onArrive}:{eve
  useEffect(()=>{if(visible&&eventAt&&announced.current!==eventAt){announced.current=eventAt;onArrive();}},[visible,eventAt,onArrive]);
  if(!visible||!eventAt){flight.current.at=0;return null;}
  if(flight.current.at!==eventAt)flight.current={at:eventAt,delay:-(now-eventAt)/1000};
- const event=cookieEvent(eventAt),Icon=event.id==="gift"?Gift:event.id==="cookie"?Cookie:Sparkles;
- return <div className="cookie-flyby-lane" key={eventAt}><button className={"cookie-flyby event-"+event.id+(claiming?" catching":"")} style={{"--flight-delay":flight.current.delay+"s"} as CSSProperties} onClick={()=>onCatch(eventAt)} disabled={blocked} aria-label={"Attraper : "+event.name+". Bonus de cookies."}><span className="flyby-orbit" aria-hidden="true"/><span className="flyby-icon"><Icon size={27}/></span><span><small>{claiming?"ATTRAPÉ…":"SURPRISE !"}</small><strong>{event.name}</strong><span>{claiming?"On récupère le cadeau":"Attrape-moi !"}</span></span><span className="flyby-trail" aria-hidden="true">✦ · ✧</span></button></div>;
+ const event=cookieEvent(eventAt),Icon=({gift:Gift,cookie:Cookie,comet:Sparkles,rush:Flame,golden:Ticket,rain:CloudRain})[event.id];
+ return <div className="cookie-flyby-lane" key={eventAt}><button className={"cookie-flyby event-"+event.id+(claiming?" catching":"")} style={{"--flight-delay":flight.current.delay+"s"} as CSSProperties} onClick={()=>onCatch(eventAt)} disabled={blocked} aria-label={"Attraper : "+event.name+". "+event.hint+"."}><span className="flyby-orbit" aria-hidden="true"/><span className="flyby-icon"><Icon size={27}/></span><span><small>{claiming?"ATTRAPÉ…":"SURPRISE !"}</small><strong>{event.name}</strong><span>{claiming?"On récupère le cadeau":event.hint}</span></span><span className="flyby-trail" aria-hidden="true">✦ · ✧</span></button></div>;
 }

@@ -125,3 +125,17 @@ Trois surprises traversent ponctuellement l’écran : Comète sucrée, Biscuit 
 Les événements ont un tintement à l’arrivée et un jingle à la récolte. Le bouton cloche coupe ces effets indépendamment de la musique ; le navigateur attend une interaction avec le jeu pour autoriser le son. En mode animations réduites, le bonus reste immobile.
 
 La playlist originale contient Biscuit cosmique, Caramel disco, Jacuzzi néon et Goûter tropical. Elle change après quatre boucles de 16 mesures, soit toutes les 2 à 2 min 15 selon le tempo. Le morceau en cours est affiché ; une pause fige la rotation. La musique reste désactivée par défaut.
+
+### Version 14.0.0
+
+- Prix de production en encarts contrastés, avec le coût total du lot ×1 / ×10 / ×100, y compris quand le budget est insuffisant.
+- Pilote automatique : préférence ON/OFF locale mémorisée par prénom normalisé, reprise après rechargement et navigation. Les gains restent calculés et enregistrés côté serveur ; le pilote ne produit que lorsque l’Arcade est visible.
+- Indicateur de sauvegarde stable pendant les requêtes de fond ; les erreurs de synchronisation restent visibles.
+- 12 compagnons Arcade ajoutés (indices 66–77), avec des paliers intermédiaires. Les 6 précédents conservent leur indice et leur seuil.
+- Le compagnon de l’atelier suit le plus haut palier débloqué. La collection est présentée par ordre de progression.
+- Couronne de feu animée pendant la fournée dorée ×7, statique si les animations réduites sont préférées.
+- Aucune réinitialisation : anciennes parties, identifiants et récompenses déjà acquises conservés.
+
+Trois surprises supplémentaires : Fournée éclair (×7 pendant 30 s, sans raccourcir une fournée active), Ticket doré (bonus doré prêt immédiatement) et Pluie de miettes (2 min de production de base, minimum 250 cookies). Les six types affichent leur effet avant la récolte ; reçus UUID conservés, aucune modification de schéma.
+
+Le contenu Arcade passe à 40 recettes, 24 objectifs et 60 succès. Les identifiants précédents restent inchangés. Les champs optionnels maxRecipes, maxBuildingKinds et maxProduction retiennent les records pour les nouveaux défis, même après prestige. Les anciens joueurs récupèrent les succès éligibles à la synchronisation.

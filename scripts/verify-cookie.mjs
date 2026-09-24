@@ -7,7 +7,7 @@ import ts from "typescript";
 const base="http://127.0.0.1:5173",author="TestCookie",key="testcookie";
 const reportPath=path.resolve(".sites-runtime/cookie-integration-report.json");
 const fixtureIds=[],checks=[],calls=[],issues=[];let cleanup;
-const transpiled=ts.transpileModule(await fs.readFile("lib/cookie-game.ts","utf8"),{compilerOptions:{module:ts.ModuleKind.CommonJS}}).outputText;
+const transpiled=ts.transpileModule(await fs.readFile("lib/cookie-game.ts","utf8"),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
 const module={exports:{}};new Function("exports","module",transpiled)(module.exports,module);const game=module.exports;
 const near=(a,b,e=1e-6)=>Math.abs(a-b)<=e;
 function check(label,ok,detail){checks.push({label,pass:Boolean(ok),...(!ok?{detail}:{})});}
@@ -122,14 +122,46 @@ try{
  seed({balance:125,lifetime:500,clicks:100});r=await action({kind:"sync"});const scheduledAt=r.player.nextEventAt;check("old save receives one future surprise without changing progress",scheduledAt>=r.player.updated+90000&&scheduledAt<=r.player.updated+180000&&r.player.balance===125&&r.player.lifetime===500&&r.player.clicks===100,r);
  const eventReads=await Promise.all([read(),read()]);check("GET requests preserve the stored event schedule",eventReads.every(x=>x.player.nextEventAt===scheduledAt)&&JSON.parse(persisted().data).nextEventAt===scheduledAt,eventReads);
  await action({kind:"event",eventAt:scheduledAt},uuid(),400);
- let eventAt=Date.now()-1000;seed({nextEventAt:eventAt,balance:200});await action({kind:"event",eventAt:eventAt+1},uuid(),400);
+ let eventAt=Math.floor((Date.now()-1000)/6000)*6000;seed({nextEventAt:eventAt,balance:200});await action({kind:"event",eventAt:eventAt+1},uuid(),400);
  const eventId=uuid();r=await action({kind:"event",eventAt},eventId);const eventGain=game.cookieEventReward(game.freshCookiePlayer(Date.now()),eventAt);check("catch awards exact cookies and schedules the next surprise",r.eventReward===eventGain&&r.player.balance===200+eventGain&&r.player.lifetime===eventGain&&r.player.nextEventAt>=r.player.updated+90000,r);
  const caught=r.player,repeatEvent=await action({kind:"event",eventAt},eventId);check("event UUID replay cannot grant twice",repeatEvent.player.balance===caught.balance&&repeatEvent.player.version===caught.version,repeatEvent);await action({kind:"event",eventAt},uuid(),400);
  eventAt=Date.now()-1000;seed({nextEventAt:eventAt});const eventParallel=await Promise.all([action({kind:"event",eventAt},uuid(),null),action({kind:"event",eventAt},uuid(),null)]);check("two tabs cannot catch the same event twice",eventParallel.filter(x=>x.status===200).length===1&&eventParallel.filter(x=>x.status===400).length===1,eventParallel);
  eventAt=Date.now()-game.EVENT_WINDOW_MS-1000;seed({nextEventAt:eventAt});await action({kind:"event",eventAt},uuid(),400);r=await action({kind:"sync"});check("expired events reschedule without free offline reward",r.player.balance===0&&r.player.nextEventAt>=r.player.updated+90000,r);
  eventAt=Date.now()+120000;seed({nextEventAt:eventAt,lifetime:1e9,runEarned:1e9});r=await action({kind:"prestige"});check("prestige preserves pending surprise",r.player.nextEventAt===eventAt,r);
- const eventScaled=game.freshCookiePlayer(0);eventScaled.buildings[1]=100;eventScaled.rushUntil=1e9;check("surprise scales with base production without rush multiplication",game.cookieEventReward(eventScaled,3000)===2000,eventScaled);
+ const eventScaled=game.freshCookiePlayer(0);eventScaled.buildings[1]=100;eventScaled.rushUntil=1e9;check("surprise scales with base production without rush multiplication",game.cookieEventReward(eventScaled,6000)===2000,eventScaled);
  for(const bad of [{kind:"event",eventAt:-1},{kind:"event",eventAt:1.5},{kind:"event",eventAt:Number.MAX_SAFE_INTEGER+1}])await action(bad,uuid(),400);
+
+ // Avatar identifiers and old save behavior must remain compatible with the preceding committed release.
+ const previousSource=spawnSync("git",["show","HEAD:lib/cookie-game.ts"],{encoding:"utf8"});if(previousSource.status!==0)throw Error("Previous model unavailable");
+ const previousModule={exports:{}};new Function("exports","module",ts.transpileModule(previousSource.stdout,{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText)(previousModule.exports,previousModule);
+ const previousGame=previousModule.exports;
+ check("old avatar IDs names and thresholds retained",JSON.stringify(game.COOKIE_AVATARS.slice(0,6))===JSON.stringify(previousGame.COOKIE_AVATARS.slice(0,6)));
+ check("buildings recipes missions and achievements retained",["BUILDINGS","UPGRADES","COOKIE_MISSIONS","COOKIE_ACHIEVEMENTS"].every(k=>JSON.stringify(game[k].slice(0,previousGame[k].length))===JSON.stringify(previousGame[k])));
+ check("avatar IDs remain contiguous and unique",game.COOKIE_AVATARS.length===18&&game.COOKIE_AVATARS.every((a,i)=>a.index===60+i));
+ check("mascot follows threshold rather than avatar index",[[0,60],[99,60],[100,66],[999,66],[1000,61],[999999,68],[1e6,62],[1e9,63],[1e15,65],[1e18,77]].every(([n,i])=>game.latestCookieAvatar(n).index===i));
+ for(const avatar of game.COOKIE_AVATARS.slice(6)){seed({lifetime:avatar.threshold-Math.max(1,avatar.threshold*Number.EPSILON*2)});await profile(avatar.index,"none",400);seed({lifetime:avatar.threshold});await profile(avatar.index);}
+ await profile(78,"none",400);
+ seed({lifetime:1e18,runEarned:1e9});r=await action({kind:"prestige"});check("prestige preserves newest companion",game.latestCookieAvatar(r.player.lifetime).index===77);await profile(77);
+ const pickAt=i=>Math.floor((Date.now()-7000)/6000)*6000+i*1000;
+ eventAt=pickAt(3);seed({nextEventAt:eventAt,balance:200});const rushEventId=uuid();r=await action({kind:"event",eventAt},rushEventId);
+ check("rush surprise starts30s without changing cookies",r.eventEffect==="rush"&&r.eventReward===0&&r.player.balance===200&&r.player.rushUntil===r.player.updated+30000,r);
+ const rushResult=r;const rushReplay=await action({kind:"event",eventAt},rushEventId);check("rush retry cannot extend duration",rushReplay.player.rushUntil===rushResult.player.rushUntil&&rushReplay.player.version===rushResult.player.version,rushReplay);
+ eventAt=pickAt(3);const longRush=Date.now()+77000;seed({nextEventAt:eventAt,rushUntil:longRush});r=await action({kind:"event",eventAt});check("rush surprise never shortens active golden bonus",r.player.rushUntil===longRush,r);
+ eventAt=pickAt(4);seed({nextEventAt:eventAt,goldenReadyAt:Date.now()+300000});const ticketId=uuid();r=await action({kind:"event",eventAt},ticketId);check("golden ticket makes bonus immediately ready",r.eventEffect==="golden"&&r.eventReward===0&&r.player.goldenReadyAt<=r.player.updated,r);
+ r=await action({kind:"golden"});const ticketCooldown=r.player.goldenReadyAt;r=await action({kind:"event",eventAt},ticketId);check("replaying ticket after using golden cannot reset cooldown again",r.player.goldenReadyAt===ticketCooldown,r);
+ eventAt=pickAt(5);seed({nextEventAt:eventAt});r=await action({kind:"event",eventAt});check("rain grants250 minimum",r.eventReward===250&&r.player.balance===250,r);
+ const rainPlayer=game.freshCookiePlayer(1000);rainPlayer.buildings[1]=100;check("rain scales to120s base production",game.cookieEventReward(rainPlayer,5000)===12000);
+
+ check("expanded catalog sizes and unique identifiers",game.UPGRADES.length===40&&game.COOKIE_MISSIONS.length===24&&game.COOKIE_ACHIEVEMENTS.length===60&&["UPGRADES","COOKIE_MISSIONS","COOKIE_ACHIEVEMENTS"].every(k=>new Set(game[k].map(x=>x.id)).size===game[k].length));
+ seed({});await action({kind:"mission",mission:"m13"},uuid(),400);await action({kind:"mission",mission:"m15"},uuid(),400);
+ seed({buildings:[1,1,1,0,0,0,0,0,0,0],updated:Date.now()+60000});r=await action({kind:"mission",mission:"m13"});check("diversity mission evaluates derived metric and grants500",r.player.missions.includes("m13")&&r.player.balance===500,r);
+ seed({upgrades:["thumb","hooves","rhythm"],updated:Date.now()+60000});r=await action({kind:"mission",mission:"m15"});check("recipe mission evaluates derived metric",r.player.missions.includes("m15")&&r.player.balance===500,r);
+ seed({balance:1e9,buildings:[50,0,0,0,0,0,0,0,0,0],upgrades:["spoon_double"]});await action({kind:"upgrade",upgrade:"spoon_signature"},uuid(),400);
+ await action({kind:"upgrade",upgrade:"spoon_master"});r=await action({kind:"upgrade",upgrade:"spoon_signature"});check("building signature stacks to8x and keeps prerequisites",near(game.baseProduction(r.player),40),r);
+ const gainBefore=game.clickPower(r.player);seed({...r.player,balance:1e7,clicks:2000});r=await action({kind:"upgrade",upgrade:"whisk"});check("new click recipe increases full gain25percent",near(game.clickPower(r.player),gainBefore*1.25),r);
+ const allRecipes=game.freshCookiePlayer(1000);allRecipes.upgrades=game.UPGRADES.map(u=>u.id);allRecipes.buildings=game.BUILDINGS.map(()=>1);allRecipes.goldenClicks=34;game.award(allRecipes);check("new achievements award retroactively from existing stats",["recipe5","diversity3","golden3","flow0"].every(id=>allRecipes.achievements.includes(id)),allRecipes);
+ allRecipes.runEarned=1e9;allRecipes.lifetime=1e9;const previousRecords={recipes:allRecipes.maxRecipes,kinds:allRecipes.maxBuildingKinds,production:allRecipes.maxProduction};game.applyCookieAction(allRecipes,{kind:"prestige"},1000);check("prestige preserves records and eligibility for unclaimed goals",game.cookieMetric(allRecipes,"recipes")===40&&game.cookieMetric(allRecipes,"buildingKinds")===10&&game.cookieMetric(allRecipes,"production")===previousRecords.production&&allRecipes.achievements.includes("recipe5"),allRecipes);game.applyCookieAction(allRecipes,{kind:"mission",mission:"m21"},1000);check("recipe mission can be claimed after prestige",allRecipes.missions.includes("m21")&&allRecipes.balance===1e7);
+ const sharing=game.freshCookiePlayer(0);sharing.upgrades=["rhythm","cadence","pulse","resonance"];check("late recipes give75percent CPS share",near(game.clickProductionShare(sharing),.75));
  // deterministic pure math verifies segmentation, replaying server game functions only.
  const p=game.freshCookiePlayer(1000);p.buildings[1]=1;p.rushUntil=78000;game.settle(p,41000);game.settle(p,101000);
  check("segmented settle equals single100s interval with77s boost",near(p.balance,562),p);
