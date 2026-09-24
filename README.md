@@ -24,7 +24,7 @@ Le QG du séjour du **20 au 27 septembre 2026**, pour Alex, Bimbo, Penelop, Telr
 - QG vivant : avatars synchronisés toutes les 5 secondes, déplacements entre les pièces, promenade, position assise et bain. Heartbeat de 15 secondes, expiration après 60 secondes ; les onglets masqués ne sollicitent pas la présence.
 - Prochaine activité en aperçu sur l’accueil, avec horaire et compte à rebours. Les rendez-vous retenus ont priorité sur le créneau initial de la même activité.
 - Classement des 11 membres par votes et accessoires à 3, 7, 12, 20 et 34 votes. Le record est permanent ; changer un vote ne multiplie pas les points. Les votes existants sont repris. Page Récompenses avec collection, paliers et replay de chaque animation ; les succès non vus se révèlent à la visite, avec suivi local par prénom/appareil.
-- Cookie Jacuzzi : 10 bâtiments, achats ×1/×10/×100, 20 améliorations, 12 objectifs rémunérés et 30 succès permanents. Bonus doré, production hors ligne limitée à 8 h et prestige cumulatif (+10 % par étoile). Six avatars gourmands à débloquer, révélations automatiques et replay. Sauvegarde serveur par prénom, requêtes idempotentes et reprise des actions en attente sur le même navigateur.
+- Cookie Jacuzzi : 10 bâtiments, achats ×1/×10/×100, 20 améliorations, 12 objectifs rémunérés et 30 succès permanents. Bonus doré, production hors ligne limitée à 8 h et prestige cumulatif (+10 % par étoile). Six avatars gourmands à débloquer, notifications de déblocage non bloquantes (par lots de trois, sans interception des clics) et replay volontaire en grand. Icônes propres aux 10 bâtiments, 20 recettes et 30 succès ; recettes dans leur onglet dédié, prix toujours affichés. Sauvegarde serveur par prénom, requêtes idempotentes et reprise des actions en attente sur le même navigateur. Les achats attendent la sauvegarde en cours sans désactiver la boutique pendant les clics. Chaque clic ajoute 10 % de la production par seconde, puis 20 % et 35 % avec les recettes dédiées ; les bonus de base ×2 et ×3 arrivent dès 25 et 100 clics.
 - Classement Cookie indépendant : podium, cookies produits au total, clics, prestige et position personnelle ; tri par production historique, puis clics et prénom. Les dépenses et prestiges ne font pas baisser le score. Les trophées de votes restent dans Récompenses ; succès et avatars du jeu restent dans Arcade.
 - Badge DEV exclusif à Alex, y compris dans les scènes 3D.
 - Stockage partagé D1. Actualisation toutes les 15 secondes quand la page est visible et après les actions. Identité libre par prénom.
@@ -99,3 +99,19 @@ Les accessoires du vestiaire (dont la bouée) se choisissent dans trois catégor
 Le cinéma propose un accès au catalogue en tête de page. Depuis la fiche d’un film déjà ajouté, tout membre peut le supprimer après confirmation ; ses votes, messages, séances et présences liées sont retirés dans la même transaction. Les statistiques des cartes du crew sont affichées explicitement, indépendamment du support des faces 3D du navigateur.
 
 « Tous les films » est le filtre initial, trié par nombre de votes positifs décroissant (titre comme départage). « Mes favoris » ne montre que les films aimés par le prénom sélectionné.
+
+### Arcade v12
+
+Le bouton Plein écran masque la navigation et utilise le plein écran natif lorsqu’il est disponible ; un mode immersif prend le relais sinon. Quitter le plein écran ou Échap ramène au site, sans recréer la partie.
+
+Cookie Groove est une boucle originale synthétisée localement à 118 BPM : désactivée par défaut, volume réglable, pause quand l’onglet est masqué et arrêt à la sortie de l’Arcade. Aucune piste externe n’est téléchargée.
+
+Le pilote automatique se débloque à 2 000 clics (2/s), puis 5 000 (4/s), 15 000 (6/s) et 50 000 (10/s). Son interrupteur est désactivé par défaut. Il fonctionne uniquement dans l’Arcade au premier plan ; les clics automatiques comptent pour les paliers et les succès. Le serveur limite le débit par joueur, y compris entre plusieurs onglets. Les paliers sont permanents.
+
+### Préserver les progressions et publier
+
+Ne jamais réinitialiser la base en publiant. Garder les identifiants de recettes, bâtiments, succès, avatars et les clés de sauvegarde ; les évolutions de données doivent accepter les anciennes parties. Les actions en attente conservent leur UUID et sont rejouées sans double crédit. Les clics en attente sont envoyés au masquage ou à la sortie et conservés localement pour réessayer si nécessaire.
+
+Avant chaque modification de persistance : exécuter `node scripts/backup-progress.mjs`, puis les tests `node scripts/verify-cookie.mjs` sur localhost. La copie JSON vérifiée par SHA-256 reste dans le dossier ignoré `.sites-runtime/backups`. C’est une sauvegarde logique des données accessibles par les API, sans les reçus d’actions ni une garantie de cohérence transactionnelle ; elle ne remplace pas la base active. Toute restauration doit d’abord être validée dans une base isolée. Ne jamais publier ces fichiers sur GitHub.
+
+Le numéro du pied de page vient de la version de package.json. Le build enregistre automatiquement la date et l’heure de préparation dans lib/site-release.json ; affichage en heure de Paris, identique pour tous les visiteurs. Incrémenter la version avant toute nouvelle publication.

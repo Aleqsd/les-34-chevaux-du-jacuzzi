@@ -65,8 +65,8 @@ try{
  await action({kind:"upgrade",upgrade:"cocoa_master"},uuid(),400);
  await action({kind:"upgrade",upgrade:"cocoa_double"});
  r=await action({kind:"upgrade",upgrade:"cocoa_master"});check("advanced upgrade requires then stacksdouble",r.player.upgrades.includes("cocoa_master")&&game.baseProduction(r.player)===25*450*4,r);
- seed({balance:1000,clicks:49});await action({kind:"upgrade",upgrade:"thumb"},uuid(),400);
- seed({balance:1000,clicks:50});r=await action({kind:"upgrade",upgrade:"thumb"});check("click upgrade prerequisite and power",r.player.balance===900&&game.clickPower(r.player)===2,r);
+ seed({balance:1000,clicks:24});await action({kind:"upgrade",upgrade:"thumb"},uuid(),400);
+ seed({balance:1000,clicks:25});r=await action({kind:"upgrade",upgrade:"thumb"});check("click upgrade prerequisite and power",r.player.balance===950&&game.clickPower(r.player)===2,r);
  buildings=game.BUILDINGS.map(()=>0);buildings[1]=1;
  seed({buildings,updated:Date.now()-10*3600000});
  r=await action({kind:"sync"});check("offline production capped exactly8h",r.offline===28800&&r.player.balance===28800,r);
@@ -104,6 +104,21 @@ try{
  const beforeReplay=await action({kind:"sync"});r=await action({kind:"buy",building:0,quantity:1},oldId);
  check("purchase UUID remains idempotent after24h receipt cleanup",r.player.buildings[0]===1&&r.player.version===beforeReplay.player.version&&r.player.balance===beforeReplay.player.balance,{before:oldPurchase.player,after:r.player,id:oldId});
  const board=await req("/api/club");const entry=board.cookieProgress.find(p=>p.authorKey===key);check("leaderboard exposes personal historical totals",entry?.author===author&&entry.lifetime===r.player.lifetime&&entry.clicks===r.player.clicks&&entry.prestige===r.player.prestige,entry);
+ seed({balance:10000,clicks:100,upgrades:["thumb"]});r=await action({kind:"upgrade",upgrade:"hooves"});check("early second click recipe triples base",game.clickPower(r.player)===6&&r.player.balance===9500,r);
+ buildings=game.BUILDINGS.map(()=>0);buildings[1]=100;seed({balance:1e6,lifetime:1000,buildings,upgrades:["thumb","hooves"]});r=await action({kind:"sync"});check("click scales with10 percent production",near(game.clickPower(r.player),16),r);
+ r=await action({kind:"upgrade",upgrade:"rhythm"});check("rhythm scales to20 percent",near(game.clickPower(r.player),26)&&near(game.clickProductionShare(r.player),.2),r);
+ seed({balance:1e6,lifetime:1e5,buildings,upgrades:["thumb","hooves","rhythm"]});r=await action({kind:"upgrade",upgrade:"cadence"});check("cadence scales to35 percent",near(game.clickPower(r.player),41)&&near(game.clickProductionShare(r.player),.35),r);
+ const balanced=game.freshCookiePlayer(1000);balanced.buildings[1]=100;balanced.prestige=5;balanced.upgrades=["thumb","hooves","rhythm","cadence"];check("prestige applies once to both click components",near(game.clickPower(balanced,1000),61.5),balanced);balanced.rushUntil=9000;check("rush boosts CPS share without double prestige",near(game.clickPower(balanced,1000),376.5),balanced);check("fractional click gain stays visible",game.formatClickPower(1.01)==="1,01");
+ seed({balance:1e6,lifetime:1e5,buildings,upgrades:[]});r=await action({kind:"upgrade",upgrade:"cadence"});check("legacy cadence-only purchase remains eligible",r.player.upgrades.includes("cadence")&&near(game.clickProductionShare(r.player),.25),r);
+ check("autoclick speed unlocks at exact thresholds",[1999,2000,4999,5000,14999,15000,49999,50000].map(game.autoClickRate).join(',')==='0,2,2,4,4,6,6,10');
+ seed({clicks:1999});await action({kind:"auto",count:2},uuid(),400);
+ const legacyAuto=game.freshCookiePlayer(1000);legacyAuto.clicks=2000;game.award(legacyAuto);const preserved=JSON.parse(JSON.stringify(legacyAuto));game.settle(legacyAuto,1000);check("legacy save retains all existing values when autocredit is introduced",Object.keys(preserved).every(k=>JSON.stringify(legacyAuto[k])===JSON.stringify(preserved[k]))&&legacyAuto.autoCredit===0,legacyAuto);
+ seed({clicks:2000,autoCredit:0,updated:Date.now()+60000});r=await action({kind:"auto",count:25});check("autoclick cannot mint clicks without credit",r.acceptedClicks===0&&r.player.clicks===2000,r);
+ seed({clicks:2000,autoCredit:4,updated:Date.now()+60000});const autoId=uuid();r=await action({kind:"auto",count:25},autoId);check("initial auto rate has a2second burst cap and independent manual credit",r.acceptedClicks===4&&r.player.clicks===2004&&r.player.clickCredit===25,r);const ar=await action({kind:"auto",count:25},autoId);check("autoclick replay UUID does not double count",ar.player.clicks===2004&&ar.player.version===r.player.version,ar);
+ seed({clicks:50000,autoCredit:20,updated:Date.now()+60000});const autoParallel=await Promise.all([action({kind:"auto",count:20}),action({kind:"auto",count:20})]);r=await read();check("parallel auto tabs share a single speed allowance",r.player.clicks===50020&&autoParallel.reduce((n,x)=>n+x.acceptedClicks,0)===20,r);
+ const offlineAuto=game.freshCookiePlayer(1000);offlineAuto.clicks=50000;game.settle(offlineAuto,1000+8*3600000);check("autoclick never generates hours of offline clicks",offlineAuto.clicks===50000&&offlineAuto.autoCredit===20&&offlineAuto.balance===0,offlineAuto);
+ const crossing=game.freshCookiePlayer(1000);crossing.clicks=4999;crossing.autoCredit=2;game.applyCookieAction(crossing,{kind:"auto",count:2},1000);check("automatic clicks unlock the next acceleration",crossing.clicks===5001&&game.autoClickRate(crossing.clicks)===4,crossing);
+ for(const bad of [{kind:"auto",count:0},{kind:"auto",count:26},{kind:"auto",count:1.5}])await action(bad,uuid(),400);
  // deterministic pure math verifies segmentation, replaying server game functions only.
  const p=game.freshCookiePlayer(1000);p.buildings[1]=1;p.rushUntil=78000;game.settle(p,41000);game.settle(p,101000);
  check("segmented settle equals single100s interval with77s boost",near(p.balance,562),p);
