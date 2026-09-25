@@ -144,7 +144,7 @@ try{
  const previousSource=spawnSync("git",["show","HEAD:lib/cookie-game.ts"],{encoding:"utf8"});if(previousSource.status!==0)throw Error("Previous model unavailable");
  const previousModule={exports:{}};new Function("exports","module",ts.transpileModule(previousSource.stdout,{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText)(previousModule.exports,previousModule);
  const previousGame=previousModule.exports;
- check("old avatar IDs names and thresholds retained",JSON.stringify(game.COOKIE_AVATARS.slice(0,previousGame.COOKIE_AVATARS.length))===JSON.stringify(previousGame.COOKIE_AVATARS));
+ check("old avatar IDs names and earned rewards retained",previousGame.COOKIE_AVATARS.every((a,i)=>{const next=game.COOKIE_AVATARS[i];return a.index===138?next.index===a.index&&next.name===a.name&&next.threshold<=a.threshold:JSON.stringify(next)===JSON.stringify(a);}));
  check("buildings recipes missions and achievements retained",["BUILDINGS","UPGRADES","COOKIE_MISSIONS","COOKIE_ACHIEVEMENTS"].every(k=>JSON.stringify(game[k].slice(0,previousGame[k].length))===JSON.stringify(previousGame[k])));
  check("avatar IDs remain contiguous and unique",game.COOKIE_AVATARS.length===79&&game.COOKIE_AVATARS.every((a,i)=>a.index===60+i));
  check("mascot follows threshold rather than avatar index",[[0,60],[99,60],[100,66],[999,66],[1000,61],[999999,68],[1e6,62],[1e9,63],[1e15,65],[1e18,77]].every(([n,i])=>game.latestCookieAvatar(n).index===i));

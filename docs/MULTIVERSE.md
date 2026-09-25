@@ -1,14 +1,18 @@
-# Progression après 10³⁰ — v29
+# Progression après 10³⁰ — v30
 
 Le catalogue actuel compte **56 bâtiments, 270 recettes, 116 objectifs permanents, 183 succès et 79 avatars à gagner** (en plus des 60 avatars libres). Le dernier accès aux bâtiments reste à **10¹⁴⁷** ; le plafond numérique reste à `1e200`. La v28 ajoute aussi 9 recettes secrètes permanentes et trois formes pour les compagnons historiques : voir [Voyages et achats v28](VOYAGES.md).
 
-## Fin de progression v29
+## Fin de progression v30
 
-À `1e200` cookies produits au total, le **Gardien de la dernière miette** (index 138) rejoint définitivement le vestiaire. Il est immédiatement légendaire, sans seconde série d'évolutions. Une carte de fin apparaît dans l'atelier avec un lien vers une issue GitHub préremplie pour demander la suite. Le lien utilise la progression confirmée par le serveur, ne contient ni identité ni sauvegarde, et n'envoie rien automatiquement. L'avatar et la carte restent acquis après dépenses et prestige.
+À `1e153` cookies produits au total, le **Gardien de la dernière miette** (index 138) rejoint définitivement le vestiaire. Il est immédiatement légendaire, sans seconde série d'évolutions. Une carte de fin apparaît dans l'atelier avec un lien vers une issue GitHub préremplie pour demander la suite. Le lien utilise la progression confirmée par le serveur, ne contient ni identité ni sauvegarde, et n'envoie rien automatiquement. L'avatar et la carte restent acquis après dépenses et prestige. Les joueurs déjà au-delà reçoivent cette récompense sans nouvel achat ni nouvelle production.
+
+Ce seuil rond dépasse le coût de 100 Derniers banquets, de leurs recettes et de leurs synergies (environ `3.9154e152`, prérequis inclus, sans réductions). La condition reste le total historique produit, sans imposer de racheter 100 ateliers après un prestige. Les prix et la production ne changent pas. Le plafond technique reste à `1e200` : les joueurs peuvent continuer leur score et aucun total existant n'est abaissé.
+
+La carte « Dernière ligne droite » apparaît dès `1e147`. Sa barre représente les six paliers successifs ×10 jusqu'à `1e153`, avec les bornes et le total réel affichés ; ce n'est pas un pourcentage linéaire des cookies à produire. Le bouton GitHub et l'avatar restent réservés à la fin.
 
 La maîtrise est plafonnée à **27 points**, obtenus après **135 succès distincts connus** : exactement les neuf talents au rang 3. Les succès suivants restent acquis sans générer de points inutilisables. Les anciens rangs, prérequis, sauvegardes et règles de redistribution sont conservés.
 
-`verify-finale.cjs` vérifie les frontières du plafond, les anciens catalogues, l'image, la complétion et le prestige. `verify-finale-api.mjs` vérifie sur localhost les droits de l'avatar, la persistance des 27 rangs et les UUID répétés. Aucune nouvelle extension du plafond ni remise à zéro.
+`verify-finale.cjs` vérifie les frontières de fin, la progression des paliers, les anciens catalogues, les scores déjà au-delà, l'image, la complétion et le prestige. `verify-finale-api.mjs` vérifie sur localhost les droits de l'avatar dès le nouveau seuil, la persistance des 27 rangs et les UUID répétés. Aucune nouvelle extension du plafond ni remise à zéro.
 
 ## Historique v26
 

@@ -1,7 +1,8 @@
-// Current absolute finish line; extending it requires an explicit content release.
+// Numerical safety cap stays above the adventure finale to preserve existing scores.
 export const COOKIE_CAP=1e200;
-export const FINAL_COOKIE_AVATAR={index:138,name:"Gardien de la dernière miette",threshold:COOKIE_CAP};
-export const cookieAtCap=(p:Pick<CookiePlayer,"lifetime">|null|undefined)=>!!p&&p.lifetime>=COOKIE_CAP;
+export const COOKIE_FINALE_TOTAL=1e153,COOKIE_FINALE_START=1e147;
+export const FINAL_COOKIE_AVATAR={index:138,name:"Gardien de la dernière miette",threshold:COOKIE_FINALE_TOTAL};
+export const cookieFinished=(p:Pick<CookiePlayer,"lifetime">|null|undefined)=>!!p&&p.lifetime>=COOKIE_FINALE_TOTAL;
 export const MANUAL_CPS=12,MANUAL_BURST=24;
 // A fixed chart rewards learning. Times and positions are shared by client and server.
 export const RHYTHM_BPM=110,RHYTHM_WINDOW=210,RHYTHM_APPROACH=1100,RHYTHM_MISS=-9999,RHYTHM_BOOST_MS=24*60*60*1000;
@@ -720,7 +721,7 @@ export type VoyageAction=
  {kind:"companionEquip";companion:number|null;revision:number}|
  {kind:"paradoxSwitch";mode:"light"|"mirror";revision:number}|
  {kind:"banquetPrepare";course:number;revision:number};
-export const companionRecord=(p:CookiePlayer,index:number):CompanionRecord=>{const record=p.voyages?.companions[index]??{stage:1,returns:0,finds:0,secrets:0,regions:[]};return index===FINAL_COOKIE_AVATAR.index&&cookieAtCap(p)?{...record,stage:3}:record;};
+export const companionRecord=(p:CookiePlayer,index:number):CompanionRecord=>{const record=p.voyages?.companions[index]??{stage:1,returns:0,finds:0,secrets:0,regions:[]};return index===FINAL_COOKIE_AVATAR.index&&cookieFinished(p)?{...record,stage:3}:record;};
 export const COMPANION_ROLES=[{name:"Éclaireur",description:"Découvrir plusieurs régions"},{name:"Gourmand",description:"Rapporter des ingrédients"},{name:"Gardien",description:"Explorer les passages secrets"}] as const;
 export const companionRole=(index:number)=>((index-60)%3+3)%3;
 export function companionChallenges(p:CookiePlayer,index:number,stage:2|3){const r=companionRecord(p,index),role=companionRole(index);return [
