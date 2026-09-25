@@ -1,10 +1,10 @@
 import { z } from "zod";
 import { database } from "@/lib/database";
 import { voterKey } from "@/lib/identity";
-import { BUILDINGS,WONDER_STAGES,RHYTHM_CHART_IDS,VOYAGE_IDS,SECRET_RECIPE_IDS,COOKIE_CAP,normalizeBuildings,freshCookiePlayer,settle,applyCookieAction,type CookiePlayer } from "@/lib/cookie-game";
+import { COOKIE_AVATARS,BUILDINGS,WONDER_STAGES,RHYTHM_CHART_IDS,VOYAGE_IDS,SECRET_RECIPE_IDS,COOKIE_CAP,normalizeBuildings,freshCookiePlayer,settle,applyCookieAction,type CookiePlayer } from "@/lib/cookie-game";
 import { readWonder } from "@/lib/wonder-data";
 const author=z.string().trim().min(1).max(40),uuid=z.string().uuid();
-const revision=z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER),companion=z.number().int().min(60).max(137);
+const revision=z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER),companion=z.number().int().refine(index=>COOKIE_AVATARS.some(a=>a.index===index));
 const voyageActions=[
  z.object({kind:z.literal("voyageStart"),destination:z.enum(VOYAGE_IDS),team:z.array(companion).min(1).max(3),cycle:revision}),
  z.object({kind:z.literal("voyageChoice"),runId:revision,step:z.union([z.literal(0),z.literal(1)]),choice:z.enum(["gather","study","safe","secret"])}),

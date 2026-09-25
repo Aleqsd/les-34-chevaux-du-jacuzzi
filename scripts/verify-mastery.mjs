@@ -10,10 +10,10 @@ const checks=[],check=(name,pass,detail)=>{checks.push({name,pass:!!pass,...(!pa
 for(const patch of [{},{buildings:[10,15,25,50,100,120,25,25,10,10],upgrades:g.UPGRADES.slice(0,40).map(u=>u.id),prestige:39445,clicks:234000,lifetime:4e18},{buildings:g.BUILDINGS.map(()=>100),upgrades:g.UPGRADES.map(u=>u.id),specialization:'architect',prestige:1000}]){
  const p=fresh(patch);check('v17 production unchanged without talents',old.baseProduction(p)===g.baseProduction(p));check('v17 click unchanged',old.clickPower(p,1000)===g.clickPower(p,1000));check('v17 building prices unchanged',g.BUILDINGS.every((_,i)=>old.buildingPrice(p,i,10)===g.buildingPrice(p,i,10)));
 }
-check('unique known achievements only',g.masteryPoints(fresh({achievements:[...all,...all,'unknown']}))===16);
+check('unique known achievements only',g.masteryPoints(fresh({achievements:[...all,...all,'unknown']}))===27);
 check('no points for first four successes',g.masteryPoints(fresh({achievements:all.slice(0,4)}))===0);
 const p=fresh({achievements:all});g.applyCookieAction(p,{kind:'mastery',revision:0,ranks:{variety:2,links:3,hands:1}},1000);check('valid allocation persists revision',p.mastery.revision===1&&g.masterySpent(p)===6);
-for(const action of [{revision:0,ranks:{variety:1}},{revision:1,ranks:{variety:-1}},{revision:1,ranks:{variety:1.5}},{revision:1,ranks:{variety:4}},{revision:1,ranks:{unknown:1}},{revision:1,ranks:{links:1}},{revision:1,ranks:Object.fromEntries(g.MASTERY_TALENTS.map(t=>[t.id,3]))}])check('invalid allocation rejected '+JSON.stringify(action),throws(()=>g.applyCookieAction(structuredClone(p),{kind:'mastery',...action},1000)));
+for(const action of [{revision:0,ranks:{variety:1}},{revision:1,ranks:{variety:-1}},{revision:1,ranks:{variety:1.5}},{revision:1,ranks:{variety:4}},{revision:1,ranks:{unknown:1}},{revision:1,ranks:{links:1}}])check('invalid allocation rejected '+JSON.stringify(action),throws(()=>g.applyCookieAction(structuredClone(p),{kind:'mastery',...action},1000)));
 check('redistribution cooldown enforced',throws(()=>g.applyCookieAction(structuredClone(p),{kind:'mastery',revision:1,ranks:{}},1001)));
 g.applyCookieAction(p,{kind:'mastery',revision:1,ranks:{variety:3,links:3,hands:1}},1001);check('new points add during cooldown',g.masterySpent(p)===7);
 g.applyCookieAction(p,{kind:'mastery',revision:2,ranks:{gifts:2,rush:2,rest:3}},1201000);check('free redistribution after20min',p.mastery.revision===3&&g.masterySpent(p)===7);

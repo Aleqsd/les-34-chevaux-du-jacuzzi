@@ -1,3 +1,7 @@
+// Current absolute finish line; extending it requires an explicit content release.
+export const COOKIE_CAP=1e200;
+export const FINAL_COOKIE_AVATAR={index:138,name:"Gardien de la dernière miette",threshold:COOKIE_CAP};
+export const cookieAtCap=(p:Pick<CookiePlayer,"lifetime">|null|undefined)=>!!p&&p.lifetime>=COOKIE_CAP;
 export const MANUAL_CPS=12,MANUAL_BURST=24;
 // A fixed chart rewards learning. Times and positions are shared by client and server.
 export const RHYTHM_BPM=110,RHYTHM_WINDOW=210,RHYTHM_APPROACH=1100,RHYTHM_MISS=-9999,RHYTHM_BOOST_MS=24*60*60*1000;
@@ -263,7 +267,7 @@ export const COOKIE_AVATARS=[{index:60,name:"Petit Biscuit",threshold:1},{index:
  {"index":134,"name":"Profiterole solaire","threshold":1e+99},
  {"index":135,"name":"Millefeuille astral","threshold":1e+105},
  {"index":136,"name":"Tarte constellation","threshold":1e+114},
- {"index":137,"name":"Gâteau des univers","threshold":1e+117}];
+ {"index":137,"name":"Gâteau des univers","threshold":1e+117},FINAL_COOKIE_AVATAR];
 export const latestCookieAvatar=(lifetime:number)=>COOKIE_AVATARS.reduce((best,a)=>a.threshold<=lifetime&&a.threshold>best.threshold?a:best,COOKIE_AVATARS[0]);
 export type Specialization="architect"|"artisan"|"watcher";
 export type ContractKind="produce"|"spend"|"catch";
@@ -287,7 +291,8 @@ export type MasteryBook={revision:number;nextChangeAt:number;ranks:Partial<Recor
 export type FollowedGoal={kind:"building"|"upgrade"|"trial"|"mission"|"rebuild"|"contract";id:string;target:number;run:number};
 export const MASTERY_COOLDOWN=20*60000;
 export const masteryRank=(p:CookiePlayer,id:MasteryId)=>Math.max(0,Math.min(3,Math.floor(p.mastery?.ranks[id]??0)));
-export const masteryPoints=(p:CookiePlayer)=>Math.floor(COOKIE_ACHIEVEMENTS.filter(a=>p.achievements.includes(a.id)).length/5);
+export const MASTERY_MAX_POINTS=MASTERY_TALENTS.length*3;
+export const masteryPoints=(p:CookiePlayer)=>Math.min(MASTERY_MAX_POINTS,Math.floor(COOKIE_ACHIEVEMENTS.filter(a=>p.achievements.includes(a.id)).length/5));
 export const masterySpent=(p:CookiePlayer)=>MASTERY_TALENTS.reduce((n,t)=>n+masteryRank(p,t.id),0);
 export const goldenRushSeconds=(p:CookiePlayer)=>77+3*masteryRank(p,"rush")+(p.voyages?.equippedRecipe==="souffle"?15:0);
 function applyMastery(p:CookiePlayer,ranks:Partial<Record<MasteryId,number>>,revision:number,now:number){
@@ -442,8 +447,6 @@ export function workshopPurchasePlan(p:CookiePlayer,budget=p.balance,now=Date.no
 export const prestigeGain=(p:CookiePlayer)=>Math.max(0,Math.floor(Math.sqrt((p.banked+p.runEarned)/1e9))-p.prestige);
 export function cookieMetric(p:CookiePlayer,metric:Metric){if(metric==="contracts")return p.contracts?.completed??0;if(metric==="contractKinds")return Math.min(...CONTRACT_KINDS.map(k=>p.contracts?.byKind[k]??0));if(metric==="contractSchools")return Math.min(...SPECIALIZATIONS.map(s=>p.contracts?.bySchool[s.id]??0));if(metric==="recipes")return Math.max(p.maxRecipes??0,p.upgrades.length);if(metric==="buildingKinds")return Math.max(p.maxBuildingKinds??0,p.buildings.filter(n=>n>0).length);if(metric==="production")return Math.max(p.maxProduction??0,baseProduction(p));return p[metric];}
 export function award(p:CookiePlayer){p.maxRecipes=cookieMetric(p,"recipes");p.maxBuildingKinds=cookieMetric(p,"buildingKinds");p.maxProduction=cookieMetric(p,"production");p.maxBuildings=Math.max(p.maxBuildings,p.buildings.reduce((a,b)=>a+b,0));p.achievements=[...new Set([...p.achievements,...COOKIE_ACHIEVEMENTS.filter(a=>cookieMetric(p,a.metric)>=a.target).map(a=>a.id)])];}
-// Finite storage guard, beyond the playable chapters through 1e147.
-export const COOKIE_CAP=1e200;
 const CAP=COOKIE_CAP;
 export const REBUILD_MISSIONS=[
  {id:"r1",name:"Rallumer les fours",metric:"buildings",target:5,reward:500},
@@ -717,7 +720,7 @@ export type VoyageAction=
  {kind:"companionEquip";companion:number|null;revision:number}|
  {kind:"paradoxSwitch";mode:"light"|"mirror";revision:number}|
  {kind:"banquetPrepare";course:number;revision:number};
-export const companionRecord=(p:CookiePlayer,index:number):CompanionRecord=>p.voyages?.companions[index]??{stage:1,returns:0,finds:0,secrets:0,regions:[]};
+export const companionRecord=(p:CookiePlayer,index:number):CompanionRecord=>{const record=p.voyages?.companions[index]??{stage:1,returns:0,finds:0,secrets:0,regions:[]};return index===FINAL_COOKIE_AVATAR.index&&cookieAtCap(p)?{...record,stage:3}:record;};
 export const COMPANION_ROLES=[{name:"Éclaireur",description:"Découvrir plusieurs régions"},{name:"Gourmand",description:"Rapporter des ingrédients"},{name:"Gardien",description:"Explorer les passages secrets"}] as const;
 export const companionRole=(index:number)=>((index-60)%3+3)%3;
 export function companionChallenges(p:CookiePlayer,index:number,stage:2|3){const r=companionRecord(p,index),role=companionRole(index);return [

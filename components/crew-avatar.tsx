@@ -8,7 +8,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import type { Profile } from "@/lib/club";
 import { requiredVotes } from "@/lib/rewards";
 import { voterKey } from "@/lib/identity";
-import { AVATAR_NAMES, DEFAULT_LOOK, EYEWEAR, HATS, EXTRAS, extraAccessory, avatarIndex, avatarSheet, lookFor, reactAvatar, type Look } from "@/lib/appearance";
+import { AVATAR_NAMES, DEFAULT_LOOK, EYEWEAR, HATS, EXTRAS, extraAccessory, avatarIndex, avatarSheet, avatarBackgroundPosition, lookFor, reactAvatar, type Look } from "@/lib/appearance";
 import type { SocialProps } from "@/components/crew-social";
 import { toast } from "sonner";
 import { EmojiImage } from "@/components/emoji-image";
@@ -26,7 +26,7 @@ export function CrewAvatar({name,small=false,index,className="",look,imageUrl,ed
   useEffect(()=>setFailed(false),[custom]);
   useEffect(()=>{if(!outfit.animated||index!==undefined)return;const react=(event:Event)=>{const d=(event as CustomEvent).detail;if(d?.name!==voterKey(name)||matchMedia("(prefers-reduced-motion: reduce)").matches)return;clearTimeout(expiry.current);setReaction("");requestAnimationFrame(()=>setReaction(d.kind));expiry.current=setTimeout(()=>setReaction(""),1200);};window.addEventListener("jacuzzi:avatar",react);return()=>{clearTimeout(expiry.current);window.removeEventListener("jacuzzi:avatar",react);};},[name,outfit.animated,index]);
   return <span title={name} className={`avatar avatar-shell ${small?"small":""} ${outfit.animated&&!editing?"animated-avatar":""} ${editing?"avatar-being-edited":""} ${reaction?`avatar-react-${reaction}`:""} ${className}`}>
-    <span className={`avatar-face kawaii-avatar ${i>=12?"extra-avatar":""}`} style={{"--avatar-image":`url("${sheet.url}")`,"--avatar-size":`${100/sheet.frame.width}% ${100/sheet.frame.height}%`,backgroundPosition:`${sheet.frame.x/(1-sheet.frame.width)*100}% ${sheet.frame.y/(1-sheet.frame.height)*100}%`} as CSSProperties}>{custom&&!failed&&<img src={custom} alt="" referrerPolicy="no-referrer" onError={()=>setFailed(true)}/>}</span>
+    <span className={`avatar-face kawaii-avatar ${i>=12?"extra-avatar":""}`} style={{"--avatar-image":`url("${sheet.url}")`,"--avatar-size":`${100/sheet.frame.width}% ${100/sheet.frame.height}%`,backgroundPosition:avatarBackgroundPosition(sheet.frame)} as CSSProperties}>{custom&&!failed&&<img src={custom} alt="" referrerPolicy="no-referrer" onError={()=>setFailed(true)}/>}</span>
     <AvatarAccessories look={outfit} editing={editing}/>
     {voterKey(name)==="alex"&&<span className="avatar-dev-badge" aria-label="Développeur du QG">DEV</span>}
     {reaction&&<span className="avatar-reaction-symbol" aria-hidden="true"><EmojiImage emoji={reaction==="yes"?"💚":reaction==="no"?"💭":"✨"}/></span>}

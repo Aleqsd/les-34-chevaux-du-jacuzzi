@@ -1,7 +1,7 @@
 "use client";
 import {useState} from "react";
 import {Waypoints,Sparkles,RefreshCw,Plus,Minus,Check,LockKeyhole,Hand,Gift,Flame,Moon,PackageOpen,Flag,Compass,Crown,Star} from "lucide-react";
-import {MASTERY_TALENTS,masteryPoints,masteryRank,type CookiePlayer,type CookieAction,type MasteryId} from "@/lib/cookie-game";
+import {MASTERY_MAX_POINTS,MASTERY_TALENTS,masteryPoints,masteryRank,type CookiePlayer,type CookieAction,type MasteryId} from "@/lib/cookie-game";
 const branches=[{id:"synergy",name:"Synergies",hint:"Un atelier qui joue collectif",Icon:Waypoints},{id:"surprise",name:"Instants précieux",hint:"Chaque surprise compte",Icon:Sparkles},{id:"rebuild",name:"Nouveaux départs",hint:"Revenir toujours plus fort",Icon:RefreshCw}] as const;
 const icons={variety:Waypoints,links:Sparkles,hands:Hand,gifts:Gift,rush:Flame,rest:Moon,starter:PackageOpen,grants:Flag,plans:Compass};
 export function CookieMastery(props:{player:CookiePlayer;now:number;busy:boolean;onAction:(a:CookieAction)=>void}){return <MasteryEditor key={props.player.mastery?.revision??0} {...props}/>;}
@@ -9,8 +9,8 @@ function MasteryEditor({player:p,now,busy,onAction}:{player:CookiePlayer;now:num
  const [draft,setDraft]=useState<Partial<Record<MasteryId,number>>>(()=>({...p.mastery?.ranks}));
  const earned=masteryPoints(p),spent=Object.values(draft).reduce((n,r)=>n+r,0),changed=MASTERY_TALENTS.some(t=>(draft[t.id]??0)!==masteryRank(p,t.id)),removes=MASTERY_TALENTS.some(t=>(draft[t.id]??0)<masteryRank(p,t.id)),waiting=Math.max(0,(p.mastery?.nextChangeAt??0)-now);
  function adjust(id:MasteryId,delta:number){setDraft(old=>{const next={...old,[id]:(old[id]??0)+delta};for(const t of MASTERY_TALENTS)if(t.requires&&(next[t.requires]??0)<2)next[t.id]=0;return next;});}
- return <section className="cookie-mastery talent-garden" aria-label="Arbre de maîtrise">
- <header className="mastery-heading"><div><span className="eyebrow">L’ARBRE DE MAÎTRISE</span><h2>Fais grandir ton savoir-faire.</h2><p>Un point tous les 5 succès. Deux rangs ouvrent le talent suivant. Tout reste acquis après un prestige.</p></div><div className="mastery-points" aria-live="polite"><strong>{earned-spent}</strong><span>point{earned-spent>1?"s":""} à investir</span><small>{spent} / {earned} attribués</small></div></header>
+ return <section data-complete={spent===MASTERY_MAX_POINTS} className="cookie-mastery talent-garden" aria-label="Arbre de maîtrise">
+ <header className="mastery-heading"><div><span className="eyebrow">L’ARBRE DE MAÎTRISE</span><h2>Fais grandir ton savoir-faire.</h2><p>Un point tous les 5 succès, jusqu’à {MASTERY_MAX_POINTS} points : juste assez pour maîtriser chaque talent. Deux rangs ouvrent le talent suivant. Tout reste acquis après un prestige.</p></div><div className="mastery-points" aria-live="polite"><strong>{spent===MASTERY_MAX_POINTS?<Check aria-label="Arbre complet" size={32}/>:earned-spent}</strong><span>{spent===MASTERY_MAX_POINTS?"Arbre complet":`${earned-spent>1?"Points":"Point"} à investir`}</span><small>{spent} / {MASTERY_MAX_POINTS} rangs attribués</small>{earned===MASTERY_MAX_POINTS&&<small>Tous les points sont acquis</small>}</div></header>
  <div className="talent-map">
  <div className="talent-root"><span><Crown size={29}/></span><strong>Le savoir du crew</strong><small>3 voies · 9 talents permanents</small></div>
  <svg className="talent-trunk" viewBox="0 0 900 62" preserveAspectRatio="none" aria-hidden="true"><path d="M450 0 V12 Q450 28 430 28 H170 Q150 28 150 48 V62"/><path d="M450 0 V62"/><path d="M450 0 V12 Q450 28 470 28 H730 Q750 28 750 48 V62"/></svg>
