@@ -1,22 +1,22 @@
 import { BUILDINGS, COOKIE_MISSIONS, REBUILD_MISSIONS, rebuildMetric, rebuildReward, prestigeGain, manualClickPower, autoClickRate, baseProduction, buildingPrice, clickPower, cookieMetric, type CookiePlayer, type Upgrade } from "@/lib/cookie-game";
 
-export function maxAffordableBuildings(p:CookiePlayer,index:number,balance=p.balance){
- let low=0,high=Math.max(0,1000-p.buildings[index]);
- while(low<high){const middle=Math.ceil((low+high)/2);if(buildingPrice(p,index,middle)<=balance+1e-6)low=middle;else high=middle-1;}
+export function maxAffordableBuildings(p:CookiePlayer,index:number,balance=p.balance,now=Date.now()){
+ let low=0,high=Math.max(0,1000-(p.buildings[index]??0));
+ while(low<high){const middle=Math.ceil((low+high)/2);if(buildingPrice(p,index,middle,now)<=balance+1e-6)low=middle;else high=middle-1;}
  return low;
 }
 export function purchaseImpact(p:CookiePlayer,index:number,quantity:number){
- const before={...p,rushUntil:0},after={...before,buildings:[...p.buildings]};
- after.buildings[index]+=quantity;
- return {production:baseProduction(after)-baseProduction(before),click:manualClickPower(after,0)-manualClickPower(before,0)};
+ const before={...p,rushUntil:0,eventBuffs:undefined,trialBoostUntil:0,rhythm:undefined},after={...before,buildings:[...p.buildings]};
+ after.buildings[index]=(after.buildings[index]??0)+quantity;
+ return {production:baseProduction(after)-baseProduction(before),click:manualClickPower(after,0)-manualClickPower(before,0),autoClick:clickPower(after,0)-clickPower(before,0)};
 }
 export function recipeImpact(p:CookiePlayer,u:Upgrade){
- if(p.upgrades.includes(u.id))return {production:0,click:0};
- const before={...p,rushUntil:0},after={...before,upgrades:[...p.upgrades,u.id]};
- return {production:baseProduction(after)-baseProduction(before),click:manualClickPower(after,0)-manualClickPower(before,0)};
+ if(p.upgrades.includes(u.id))return {production:0,click:0,autoClick:0};
+ const before={...p,rushUntil:0,eventBuffs:undefined,trialBoostUntil:0,rhythm:undefined},after={...before,upgrades:[...p.upgrades,u.id]};
+ return {production:baseProduction(after)-baseProduction(before),click:manualClickPower(after,0)-manualClickPower(before,0),autoClick:clickPower(after,0)-clickPower(before,0)};
 }
 export function steadyIncome(p:CookiePlayer,pilot:boolean){
- return baseProduction(p)+(pilot?autoClickRate(p.clicks)*clickPower({...p,rushUntil:0},0):0);
+ return baseProduction(p)+(pilot?autoClickRate(p.clicks)*clickPower({...p,rushUntil:0,eventBuffs:undefined,trialBoostUntil:0,rhythm:undefined},0):0);
 }
 export function waitForPurchase(price:number,balance:number,income:number){
  if(balance>=price)return 0;
@@ -50,6 +50,17 @@ export function nextCookieGoal(p:CookiePlayer){
 }
 export function prestigePreview(p:CookiePlayer){
  const gain=prestigeGain(p),current=1+p.prestige*.1,next=1+(p.prestige+gain)*.1,total=p.banked+p.runEarned;
- return {gain,current,next,relative:gain*.1/current,remaining:Math.max(0,(p.prestige+gain+1)**2*1e9-total),
+ // At very large totals, use a meaningful +10% star milestone.
+ // Individual stars no longer have enough precision to forecast reliably.
+ const available=p.prestige+gain,step=available<Number.MAX_SAFE_INTEGER/4?1:Math.ceil(available*.1),nextStars=available+step;
+ return {gain,current,next,relative:gain*.1/current,nextStarGain:nextStars-available,remaining:Math.max(0,nextStars**2*1e9-total),
   milestones:[.1,.25,1].map(relative=>{const target=Math.max(p.prestige+1,Math.ceil(((current*(1+relative)-1)/.1)-1e-7));return {relative,target,gain:target-p.prestige,remaining:Math.max(0,target**2*1e9-total)};})};
+}
+
+export const impactIncome=(p:CookiePlayer,gain:{production:number;autoClick:number},pilot:boolean)=>gain.production+(pilot?autoClickRate(p.clicks)*gain.autoClick:0);
+
+export function advisedBuildingPrice(p:CookiePlayer,index:number,quantity:number,pilot:boolean,now=Date.now()){
+ const offered=buildingPrice(p,index,quantity,now),expires=p.eventBuffs?.discountUntil??0;
+ if(expires>now&&waitForPurchase(offered,p.balance,steadyIncome(p,pilot))*1000>=expires-now)return buildingPrice(p,index,quantity,expires);
+ return offered;
 }

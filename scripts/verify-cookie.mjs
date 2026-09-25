@@ -1,17 +1,19 @@
+import {retryLocalDb} from './local-db-retry.mjs';
 
 import fs from "node:fs/promises";
 import path from "node:path";
 import {spawnSync} from "node:child_process";
 import crypto from "node:crypto";
 import ts from "typescript";
-const base="http://127.0.0.1:5173",author="TestCookie",key="testcookie";
+const base=process.env.COOKIE_TEST_URL||"http://127.0.0.1:5173",author="TestCookie",key="testcookie";
 const reportPath=path.resolve(".sites-runtime/cookie-integration-report.json");
 const fixtureIds=[],checks=[],calls=[],issues=[];let cleanup;
 const transpiled=ts.transpileModule(await fs.readFile("lib/cookie-game.ts","utf8"),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
 const module={exports:{}};new Function("exports","module",transpiled)(module.exports,module);const game=module.exports;
 const near=(a,b,e=1e-6)=>Math.abs(a-b)<=e;
 function check(label,ok,detail){checks.push({label,pass:Boolean(ok),...(!ok?{detail}:{})});}
-function db(sql){const r=spawnSync(process.execPath,["--import","./scripts/sites-env.mjs","./node_modules/wrangler/bin/wrangler.js","d1","execute","DB","--config","dist/server/wrangler.json","--local","--persist-to",".wrangler/state","--command",sql,"--json"],{encoding:"utf8",maxBuffer:2e6});if(r.status!==0)throw Error(r.stderr||r.stdout);return JSON.parse(r.stdout);}
+function db(sql){const r=retryLocalDb(()=>spawnSync(process.execPath,["--import","./scripts/sites-env.mjs","./node_modules/wrangler/bin/wrangler.js","d1","execute","DB","--config","dist/server/wrangler.json","--local","--persist-to",".wrangler/state","--command",sql,"--json"],{encoding:"utf8",maxBuffer:2e6}));if(r.status!==0)throw Error(r.stderr||r.stdout);return JSON.parse(r.stdout);}
+if(!["localhost","127.0.0.1","[::1]"].includes(new URL(base).hostname))throw Error("Tests must target localhost");
 const quote=s=>"'"+String(s).replaceAll("'","''")+"'";
 const uuid=()=>{const id=crypto.randomUUID();fixtureIds.push(id);return id;};
 async function req(route,body,expected=200){
@@ -45,8 +47,8 @@ try{
  r=await read();check("returned player version is latest committed",r.player.version===Math.max(...mixed.filter(x=>x.player).map(x=>x.player.version)),r.player.version); const replayCurrent=await action({kind:"click",count:3},sameId);check("old UUID replays original detail with latest player",replayCurrent.acceptedClicks===3&&replayCurrent.player.version===r.player.version&&replayCurrent.player.clicks===r.player.clicks&&replayCurrent.player.balance===r.player.balance,replayCurrent);
  seed({clickCredit:0,updated:Date.now()+60000});
  r=await action({kind:"click",count:25});check("exhausted credit accepts0 and cannot mint clicks",r.acceptedClicks===0&&r.player.balance===0&&r.player.clicks===0,r);
- seed({clickCredit:0,updated:Date.now()-1000});
- r=await action({kind:"click",count:25});check("rate credit refills25/s capped25",r.acceptedClicks===25&&r.player.clickCredit===0&&r.player.clicks===25,r);
+ seed({clickCredit:game.MANUAL_BURST,updated:Date.now()+60000});
+ r=await action({kind:"click",count:25});check("manual burst capped at24",r.acceptedClicks===game.MANUAL_BURST&&r.player.clickCredit===0&&r.player.clicks===game.MANUAL_BURST,r);
  seed({balance:15});
  const competing=await Promise.all([action({kind:"buy",building:0,quantity:1},uuid(),null),action({kind:"buy",building:0,quantity:1},uuid(),null)]);
  check("concurrent limited-funds purchases charge only affordable one",competing.filter(x=>x.status===200).length===1&&competing.filter(x=>x.status===400).length===1,competing);
@@ -96,7 +98,7 @@ try{
  r=await action({kind:"prestige"});check("nonfarm prestige requires cumulative4b for second point",r.player.prestige===2&&r.player.resets===2&&r.player.banked>=4e9,r);
  seed({lifetime:1e15-1});await profile(65,"none",400);
  seed({lifetime:1e15});await profile(65);await profile(65,"sparkle",400);
- for(const bad of [{kind:"click",count:26},{kind:"click",count:0},{kind:"click",count:1.5},{kind:"buy",building:10,quantity:1},{kind:"buy",building:0,quantity:0},{kind:"buy",building:0,quantity:1001},{kind:"buy",building:0,quantity:1.5},{kind:"oops"}])await action(bad,uuid(),400);
+ for(const bad of [{kind:"click",count:26},{kind:"click",count:0},{kind:"click",count:1.5},{kind:"buy",building:game.BUILDINGS.length,quantity:1},{kind:"buy",building:0,quantity:0},{kind:"buy",building:0,quantity:1001},{kind:"buy",building:0,quantity:1.5},{kind:"oops"}])await action(bad,uuid(),400);
  await req("/api/cookie",{author,id:"bad",action:{kind:"sync"}},400);
  // Verify replay horizon explicitly, using only our own fixture receipt.
  seed({balance:1000});const oldId=uuid();const oldPurchase=await action({kind:"buy",building:0,quantity:1},oldId);
@@ -110,15 +112,22 @@ try{
  seed({balance:1e6,lifetime:1e5,buildings,upgrades:["thumb","hooves","rhythm"]});r=await action({kind:"upgrade",upgrade:"cadence"});check("cadence scales to35 percent",near(game.clickPower(r.player),41)&&near(game.clickProductionShare(r.player),.35),r);
  const balanced=game.freshCookiePlayer(1000);balanced.buildings[1]=100;balanced.prestige=5;balanced.upgrades=["thumb","hooves","rhythm","cadence"];check("prestige applies once to both click components",near(game.clickPower(balanced,1000),61.5),balanced);balanced.rushUntil=9000;check("rush boosts CPS share without double prestige",near(game.clickPower(balanced,1000),376.5),balanced);check("fractional click gain stays visible",game.formatClickPower(1.01)==="1,01");
  seed({balance:1e6,lifetime:1e5,buildings,upgrades:[]});r=await action({kind:"upgrade",upgrade:"cadence"});check("legacy cadence-only purchase remains eligible",r.player.upgrades.includes("cadence")&&near(game.clickProductionShare(r.player),.25),r);
- check("autoclick speed unlocks at exact thresholds",[1999,2000,4999,5000,14999,15000,49999,50000].map(game.autoClickRate).join(',')==='0,2,2,4,4,6,6,10');
+ check("autoclick speed unlocks at exact thresholds",[1999,2000,4999,5000,14999,15000,49999,50000,199999,200000].map(game.autoClickRate).join(',')==='0,2,2,4,4,6,6,10,10,20');
  seed({clicks:1999});await action({kind:"auto",count:2},uuid(),400);
  const legacyAuto=game.freshCookiePlayer(1000);legacyAuto.clicks=2000;game.award(legacyAuto);const preserved=JSON.parse(JSON.stringify(legacyAuto));game.settle(legacyAuto,1000);check("legacy save retains all existing values when autocredit is introduced",Object.keys(preserved).every(k=>JSON.stringify(legacyAuto[k])===JSON.stringify(preserved[k]))&&legacyAuto.autoCredit===0,legacyAuto);
  seed({clicks:2000,autoCredit:0,updated:Date.now()+60000});r=await action({kind:"auto",count:25});check("autoclick cannot mint clicks without credit",r.acceptedClicks===0&&r.player.clicks===2000,r);
- seed({clicks:2000,autoCredit:4,updated:Date.now()+60000});const autoId=uuid();r=await action({kind:"auto",count:25},autoId);check("initial auto rate has a2second burst cap and independent manual credit",r.acceptedClicks===4&&r.player.clicks===2004&&r.player.clickCredit===25,r);const ar=await action({kind:"auto",count:25},autoId);check("autoclick replay UUID does not double count",ar.player.clicks===2004&&ar.player.version===r.player.version,ar);
+ seed({clicks:2000,autoCredit:4,updated:Date.now()+60000});const autoId=uuid();r=await action({kind:"auto",count:25},autoId);check("initial auto rate has a2second burst cap and independent manual credit",r.acceptedClicks===4&&r.player.clicks===2004&&r.player.clickCredit===game.MANUAL_BURST,r);const ar=await action({kind:"auto",count:25},autoId);check("autoclick replay UUID does not double count",ar.player.clicks===2004&&ar.player.version===r.player.version,ar);
  seed({clicks:50000,autoCredit:20,updated:Date.now()+60000});const autoParallel=await Promise.all([action({kind:"auto",count:20}),action({kind:"auto",count:20})]);r=await read();check("parallel auto tabs share a single speed allowance",r.player.clicks===50020&&autoParallel.reduce((n,x)=>n+x.acceptedClicks,0)===20,r);
+ seed({clicks:200000,autoCredit:40,updated:Date.now()+60000});const tunaId=uuid();r=await action({kind:"auto",count:40},tunaId);check("tuna accepts the client's full two-second batch",r.acceptedClicks===40&&r.player.clicks===200040&&r.player.clickCredit===game.MANUAL_BURST,r);const tunaReplay=await action({kind:"auto",count:40},tunaId);check("tuna retry UUID never doubles income",tunaReplay.player.clicks===200040&&tunaReplay.player.version===r.player.version,tunaReplay);
+ seed({clicks:200000,autoCredit:40,updated:Date.now()+60000});const tunaParallel=await Promise.all([action({kind:"auto",count:40}),action({kind:"auto",count:40})]);r=await read();check("tuna parallel tabs share a single 40-click burst",r.player.clicks===200040&&tunaParallel.reduce((n,x)=>n+x.acceptedClicks,0)===40,r);
+ r=await action({kind:"auto",count:40});check("tuna cannot mint clicks after its bucket is empty",r.acceptedClicks===0&&r.player.clicks===200040,r);
  const offlineAuto=game.freshCookiePlayer(1000);offlineAuto.clicks=50000;game.settle(offlineAuto,1000+8*3600000);check("autoclick never generates hours of offline clicks",offlineAuto.clicks===50000&&offlineAuto.autoCredit===20&&offlineAuto.balance===0,offlineAuto);
  const crossing=game.freshCookiePlayer(1000);crossing.clicks=4999;crossing.autoCredit=2;game.applyCookieAction(crossing,{kind:"auto",count:2},1000);check("automatic clicks unlock the next acceleration",crossing.clicks===5001&&game.autoClickRate(crossing.clicks)===4,crossing);
- for(const bad of [{kind:"auto",count:0},{kind:"auto",count:26},{kind:"auto",count:1.5}])await action(bad,uuid(),400);
+ for(const bad of [{kind:"auto",count:0},{kind:"auto",count:41},{kind:"auto",count:1.5}])await action(bad,uuid(),400);
+ const bulkSeed=seed({balance:1e9,lifetime:1e12,clicks:10000,buildings:game.BUILDINGS.map((_,i)=>i<5?60:0),updated:Date.now()+60000});const bulkPlan=game.recipePurchasePlan(bulkSeed,1e8),bulkId=uuid();r=await action({kind:"buyRecipes",run:0,maxCost:1e8},bulkId);check("bulk recipes follow the shared affordable plan within the displayed budget",r.purchasedRecipes===bulkPlan.recipes.length&&r.recipeCost===bulkPlan.cost&&r.player.balance===bulkSeed.balance-bulkPlan.cost&&bulkPlan.recipes.every(u=>r.player.upgrades.includes(u.id)),r);check("bulk recipes do not count spending as lifetime or run production",r.player.lifetime===bulkSeed.lifetime&&r.player.runEarned===bulkSeed.runEarned,r);const bulkRetry=await action({kind:"buyRecipes",run:0,maxCost:1e8},bulkId);check("bulk UUID replay does not buy or debit twice",bulkRetry.player.balance===r.player.balance&&bulkRetry.player.version===r.player.version,bulkRetry);
+ const raceSeed=seed({balance:1e6,lifetime:1e10,clicks:10000,buildings:game.BUILDINGS.map((_,i)=>i<4?50:0),updated:Date.now()+60000}),racePlan=game.recipePurchasePlan(raceSeed);const bulkRace=await Promise.all([action({kind:"buyRecipes",run:0,maxCost:racePlan.cost},uuid(),null),action({kind:"buyRecipes",run:0,maxCost:racePlan.cost},uuid(),null)]);r=await read();check("two tabs cannot double-spend bulk recipes",bulkRace.filter(x=>x.status===200).length===1&&bulkRace.filter(x=>x.status===400).length===1&&r.player.balance===raceSeed.balance-racePlan.cost&&new Set(r.player.upgrades).size===racePlan.recipes.length,bulkRace);
+ seed({balance:0,updated:Date.now()+60000});await action({kind:"buyRecipes",run:0,maxCost:1000},uuid(),400);
+ for(const maxCost of [0,-1,null,1e121])await action({kind:"buyRecipes",run:0,maxCost},uuid(),400);
  seed({balance:125,lifetime:500,clicks:100});r=await action({kind:"sync"});const scheduledAt=r.player.nextEventAt;check("old save receives one future surprise without changing progress",scheduledAt>=r.player.updated+90000&&scheduledAt<=r.player.updated+180000&&r.player.balance===125&&r.player.lifetime===500&&r.player.clicks===100,r);
  const eventReads=await Promise.all([read(),read()]);check("GET requests preserve the stored event schedule",eventReads.every(x=>x.player.nextEventAt===scheduledAt)&&JSON.parse(persisted().data).nextEventAt===scheduledAt,eventReads);
  await action({kind:"event",eventAt:scheduledAt},uuid(),400);
@@ -135,12 +144,12 @@ try{
  const previousSource=spawnSync("git",["show","HEAD:lib/cookie-game.ts"],{encoding:"utf8"});if(previousSource.status!==0)throw Error("Previous model unavailable");
  const previousModule={exports:{}};new Function("exports","module",ts.transpileModule(previousSource.stdout,{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText)(previousModule.exports,previousModule);
  const previousGame=previousModule.exports;
- check("old avatar IDs names and thresholds retained",JSON.stringify(game.COOKIE_AVATARS.slice(0,6))===JSON.stringify(previousGame.COOKIE_AVATARS.slice(0,6)));
+ check("old avatar IDs names and thresholds retained",JSON.stringify(game.COOKIE_AVATARS.slice(0,previousGame.COOKIE_AVATARS.length))===JSON.stringify(previousGame.COOKIE_AVATARS));
  check("buildings recipes missions and achievements retained",["BUILDINGS","UPGRADES","COOKIE_MISSIONS","COOKIE_ACHIEVEMENTS"].every(k=>JSON.stringify(game[k].slice(0,previousGame[k].length))===JSON.stringify(previousGame[k])));
- check("avatar IDs remain contiguous and unique",game.COOKIE_AVATARS.length===18&&game.COOKIE_AVATARS.every((a,i)=>a.index===60+i));
+ check("avatar IDs remain contiguous and unique",game.COOKIE_AVATARS.length===30&&game.COOKIE_AVATARS.every((a,i)=>a.index===60+i));
  check("mascot follows threshold rather than avatar index",[[0,60],[99,60],[100,66],[999,66],[1000,61],[999999,68],[1e6,62],[1e9,63],[1e15,65],[1e18,77]].every(([n,i])=>game.latestCookieAvatar(n).index===i));
  for(const avatar of game.COOKIE_AVATARS.slice(6)){seed({lifetime:avatar.threshold-Math.max(1,avatar.threshold*Number.EPSILON*2)});await profile(avatar.index,"none",400);seed({lifetime:avatar.threshold});await profile(avatar.index);}
- await profile(78,"none",400);
+ await profile(60+game.COOKIE_AVATARS.length,"none",400);
  seed({lifetime:1e18,runEarned:1e9});r=await action({kind:"prestige"});check("prestige preserves newest companion",game.latestCookieAvatar(r.player.lifetime).index===77);await profile(77);
  const pickAt=i=>Math.floor((Date.now()-7000)/6000)*6000+i*1000;
  eventAt=pickAt(3);seed({nextEventAt:eventAt,balance:200});const rushEventId=uuid();r=await action({kind:"event",eventAt},rushEventId);
@@ -152,7 +161,7 @@ try{
  eventAt=pickAt(5);seed({nextEventAt:eventAt});r=await action({kind:"event",eventAt});check("rain grants250 minimum",r.eventReward===250&&r.player.balance===250,r);
  const rainPlayer=game.freshCookiePlayer(1000);rainPlayer.buildings[1]=100;check("rain scales to120s base production",game.cookieEventReward(rainPlayer,5000)===12000);
 
- check("expanded catalog sizes and unique identifiers",game.UPGRADES.length===40&&game.COOKIE_MISSIONS.length===24&&game.COOKIE_ACHIEVEMENTS.length===68&&["UPGRADES","COOKIE_MISSIONS","COOKIE_ACHIEVEMENTS"].every(k=>new Set(game[k].map(x=>x.id)).size===game[k].length));
+ check("expanded catalog sizes and unique identifiers",game.UPGRADES.length===175&&game.COOKIE_MISSIONS.length===78&&game.COOKIE_ACHIEVEMENTS.length===135&&["UPGRADES","COOKIE_MISSIONS","COOKIE_ACHIEVEMENTS"].every(k=>new Set(game[k].map(x=>x.id)).size===game[k].length));
  seed({});await action({kind:"mission",mission:"m13"},uuid(),400);await action({kind:"mission",mission:"m15"},uuid(),400);
  seed({buildings:[1,1,1,0,0,0,0,0,0,0],updated:Date.now()+60000});r=await action({kind:"mission",mission:"m13"});check("diversity mission evaluates derived metric and grants500",r.player.missions.includes("m13")&&r.player.balance===500,r);
  seed({upgrades:["thumb","hooves","rhythm"],updated:Date.now()+60000});r=await action({kind:"mission",mission:"m15"});check("recipe mission evaluates derived metric",r.player.missions.includes("m15")&&r.player.balance===500,r);
@@ -160,7 +169,7 @@ try{
  await action({kind:"upgrade",upgrade:"spoon_master"});r=await action({kind:"upgrade",upgrade:"spoon_signature"});check("building signature stacks to8x and keeps prerequisites",near(game.baseProduction(r.player),40),r);
  const gainBefore=game.clickPower(r.player);seed({...r.player,balance:1e7,clicks:2000});r=await action({kind:"upgrade",upgrade:"whisk"});check("new click recipe increases full gain25percent",near(game.clickPower(r.player),gainBefore*1.25),r);
  const allRecipes=game.freshCookiePlayer(1000);allRecipes.upgrades=game.UPGRADES.map(u=>u.id);allRecipes.buildings=game.BUILDINGS.map(()=>1);allRecipes.goldenClicks=34;game.award(allRecipes);check("new achievements award retroactively from existing stats",["recipe5","diversity3","golden3","flow0"].every(id=>allRecipes.achievements.includes(id)),allRecipes);
- allRecipes.runEarned=1e9;allRecipes.lifetime=1e9;const previousRecords={recipes:allRecipes.maxRecipes,kinds:allRecipes.maxBuildingKinds,production:allRecipes.maxProduction};game.applyCookieAction(allRecipes,{kind:"prestige"},1000);check("prestige preserves records and eligibility for unclaimed goals",game.cookieMetric(allRecipes,"recipes")===40&&game.cookieMetric(allRecipes,"buildingKinds")===10&&game.cookieMetric(allRecipes,"production")===previousRecords.production&&allRecipes.achievements.includes("recipe5"),allRecipes);game.applyCookieAction(allRecipes,{kind:"mission",mission:"m21"},1000);check("recipe mission can be claimed after prestige",allRecipes.missions.includes("m21")&&allRecipes.balance===1e7+game.rebuildStarter(1));
+ allRecipes.runEarned=1e9;allRecipes.lifetime=1e9;const previousRecords={recipes:allRecipes.maxRecipes,kinds:allRecipes.maxBuildingKinds,production:allRecipes.maxProduction};game.applyCookieAction(allRecipes,{kind:"prestige"},1000);check("prestige preserves records and eligibility for unclaimed goals",game.cookieMetric(allRecipes,"recipes")===game.UPGRADES.length&&game.cookieMetric(allRecipes,"buildingKinds")===game.BUILDINGS.length&&game.cookieMetric(allRecipes,"production")===previousRecords.production&&allRecipes.achievements.includes("recipe5"),allRecipes);game.applyCookieAction(allRecipes,{kind:"mission",mission:"m21"},1000);check("recipe mission can be claimed after prestige",allRecipes.missions.includes("m21")&&allRecipes.balance===1e7+game.rebuildStarter(1));
  const sharing=game.freshCookiePlayer(0);sharing.upgrades=["rhythm","cadence","pulse","resonance"];check("late recipes give75percent CPS share",near(game.clickProductionShare(sharing),.75));
 
  const insightModule={exports:{}};new Function("exports","module","require",ts.transpileModule(await fs.readFile("lib/cookie-insights.ts","utf8"),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText)(insightModule.exports,insightModule,id=>{if(id==="@/lib/cookie-game")return game;throw Error("Unexpected insight dependency");});const insights=insightModule.exports;

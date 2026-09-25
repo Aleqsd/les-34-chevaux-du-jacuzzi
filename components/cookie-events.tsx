@@ -1,7 +1,7 @@
 "use client";
 import {useCallback,useEffect,useRef,useState,type CSSProperties} from "react";
-import {Cookie,Gift,Sparkles,Flame,Ticket,CloudRain} from "lucide-react";
-import {cookieEvent,EVENT_VISIBLE_MS} from "@/lib/cookie-game";
+import {Cookie,Gift,Sparkles,Flame,Ticket,CloudRain,Hand,Orbit,Wind,ShoppingBag,ArrowUpRight} from "lucide-react";
+import {cookieEvent,cookieEventReward,masteryRank,formatCookies,eventDiscount,type EventChoice,type CookiePlayer,EVENT_VISIBLE_MS} from "@/lib/cookie-game";
 export function useCookieSounds(){
  const [enabled,setEnabled]=useState(true),context=useRef<AudioContext|null>(null),enabledRef=useRef(true),voices=useRef(new Set<OscillatorNode>());
  enabledRef.current=enabled;
@@ -11,13 +11,29 @@ export function useCookieSounds(){
  const toggle=()=>{const next=!enabled;enabledRef.current=next;setEnabled(next);try{localStorage.setItem("jacuzzi-cookie-sounds-v1",next?"on":"off");}catch{}if(next){arm();play("arrival");}else{for(const voice of voices.current){try{voice.stop();}catch{}}}};
  return {enabled,arm,play,toggle};
 }
-export function CookieFlyby({eventAt,now,claiming,blocked,onCatch,onArrive}:{eventAt?:number;now:number;claiming:boolean;blocked:boolean;onCatch:(at:number)=>void;onArrive:()=>void}){
- const announced=useRef(0),flight=useRef({at:0,delay:0}),[hidden,setHidden]=useState(false);
+const eventIcons={gift:Gift,cookie:Cookie,comet:Sparkles,rush:Flame,golden:Ticket,rain:CloudRain,gallop:Flame,merchant:ShoppingBag,steam:Wind,crossroads:Orbit};
+const entrances={gift:"drop",cookie:"fly",comet:"fly",rush:"rise",golden:"portal",rain:"drop",gallop:"gallop",merchant:"portal",steam:"rise",crossroads:"choice"};
+export function CookieFlyby({player,eventAt,now,claiming,blocked,onCatch,onArrive}:{player?:CookiePlayer|null;eventAt?:number;now:number;claiming:boolean;blocked:boolean;onCatch:(at:number,choice?:EventChoice)=>void;onArrive:()=>void}){
+ const announced=useRef(0),[hidden,setHidden]=useState(false);
  useEffect(()=>{const visibility=()=>setHidden(document.hidden);visibility();document.addEventListener("visibilitychange",visibility);return()=>document.removeEventListener("visibilitychange",visibility);},[]);
  const visible=!!eventAt&&!hidden&&now>=eventAt&&now<eventAt+EVENT_VISIBLE_MS;
  useEffect(()=>{if(visible&&eventAt&&announced.current!==eventAt){announced.current=eventAt;onArrive();}},[visible,eventAt,onArrive]);
- if(!visible||!eventAt){flight.current.at=0;return null;}
- if(flight.current.at!==eventAt)flight.current={at:eventAt,delay:-(now-eventAt)/1000};
- const event=cookieEvent(eventAt),Icon=({gift:Gift,cookie:Cookie,comet:Sparkles,rush:Flame,golden:Ticket,rain:CloudRain})[event.id];
- return <div className="cookie-flyby-lane" key={eventAt}><button className={"cookie-flyby event-"+event.id+(claiming?" catching":"")} style={{"--flight-delay":flight.current.delay+"s"} as CSSProperties} onClick={()=>onCatch(eventAt)} disabled={blocked} aria-label={"Attraper : "+event.name+". "+event.hint+"."}><span className="flyby-orbit" aria-hidden="true"/><span className="flyby-icon"><Icon size={27}/></span><span><small>{claiming?"ATTRAPÉ…":"SURPRISE !"}</small><strong>{event.name}</strong><span>{claiming?"On récupère le cadeau":event.hint}</span></span><span className="flyby-trail" aria-hidden="true">✦ · ✧</span></button></div>;
+ if(!visible||!eventAt)return null;
+ const event=cookieEvent(eventAt,player?.nextEventId),Icon=eventIcons[event.id],seconds=Math.max(0,Math.ceil((eventAt+EVENT_VISIBLE_MS-now)/1000)),reward=player?cookieEventReward(player,eventAt):0;
+ const hint=player?(event.effect==="cookies"?"+"+formatCookies(reward)+" cookies":event.effect==="rush"?"Production ×7 pendant "+(event.seconds+3*masteryRank(player,"rush"))+" s":event.hint):event.hint;
+ return <div className={"cookie-encounter entrance-"+entrances[event.id]+" event-"+event.id} key={eventAt} style={{"--event-remaining":(seconds/22*100)+"%"} as CSSProperties}>
+ <div className="encounter-aura" aria-hidden="true"/>
+ {event.effect==="choice"?<section className="encounter-card encounter-choice" aria-label={event.name}>
+ <header><span className="encounter-icon"><Icon size={26}/></span><div><small>DEUX ÉTOILES, UN CHOIX · {seconds} s</small><strong>{event.name}</strong></div></header><p>La récolte tranquille ou le grand galop ?</p>
+ <div className="encounter-options"><button disabled={blocked} onClick={()=>onCatch(eventAt,"harvest")}><Gift size={21}/><strong>Récolter</strong><span>+{formatCookies(reward)} cookies</span><small>90 s de fours, tout de suite</small></button><button disabled={blocked} onClick={()=>onCatch(eventAt,"burst")}><Hand size={21}/><strong>À toi de jouer</strong><span>Clics manuels ×3</span><small>Pendant 20 s · pilote inchangé</small></button></div><span className="encounter-timer"/>
+ </section>:<button className="encounter-card" onClick={()=>onCatch(eventAt)} disabled={blocked} aria-label={"Attraper : "+event.name+". "+hint+"."}>
+ <span className="encounter-icon"><Icon size={29}/></span><span className="encounter-copy"><small>{claiming?"SURPRISE RÉCOLTÉE…":"SURPRISE · "+seconds+" s"}</small><strong>{event.name}</strong><span>{hint}</span><b>{event.effect==="discount"?"Ouvrir le portail":event.effect==="steam"?"Réveiller les fours":event.effect==="manual"?"Lancer le galop":"Récolter"}<ArrowUpRight size={13}/></b></span><span className="encounter-timer"/>
+ </button>}
+ </div>;
+}
+export function formatBonusTime(ms:number){const seconds=Math.max(0,Math.ceil(ms/1000)),minutes=Math.floor(seconds/60);return minutes>=60?`${Math.floor(minutes/60)} h ${String(minutes%60).padStart(2,"0")}`:minutes?`${minutes} min ${String(seconds%60).padStart(2,"0")} s`:`${seconds} s`;}
+export function CookieEventBuffs({player:p,now,onWorkshop,inWorkshop=false}:{player:CookiePlayer;now:number;onWorkshop:()=>void;inWorkshop?:boolean}){
+ const b=p.eventBuffs,manual=(b?.manualUntil??0)>now,steam=(b?.steamUntil??0)>now,discount=eventDiscount(p,now),master=(p.trialBoostUntil??0)>now;
+ if(!manual&&!steam&&!discount&&!master)return null;
+ return <aside className="cookie-event-buffs" aria-label="Bonus actifs">{master&&<span className="trial-boost-active"><Sparkles size={16}/><strong>Maîtrise ×2</strong><span>fours, clics et pilote</span><small>{formatBonusTime(p.trialBoostUntil!-now)}</small></span>}{manual&&<span><Hand size={16}/><strong>Clics manuels ×{b!.manualMultiplier}</strong><small>{formatBonusTime(b!.manualUntil!-now)}</small></span>}{steam&&<span><Wind size={16}/><strong>Fours ×3</strong>{p.rushUntil>now&&<span>Fournée ×7 prioritaire</span>}<small>{formatBonusTime(b!.steamUntil!-now)}</small></span>}{discount&&<span><ShoppingBag size={16}/><strong>Prochain lot −15 %</strong><small>{formatBonusTime(b!.discountUntil!-now)}</small></span>}{!inWorkshop&&<button onClick={onWorkshop}>À l’atelier<ArrowUpRight size={14}/></button>}</aside>;
 }

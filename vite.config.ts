@@ -53,7 +53,12 @@ export default defineConfig(async () => {
   return {
     server: {
       ...(managedLinux ? { host: "0.0.0.0", allowedHosts: ["terminal.local"] } : {}),
-      ...(isCodexSeatbeltSandbox ? { watch: { useFsEvents: false, usePolling: true } } : {}),
+      watch: {
+        // Packaging and local databases change while the preview is running.
+        // Watching those transient directories can crash Windows FSWatcher.
+        ignored: ["**/.sites-runtime/**", "**/.wrangler/**", "**/dist/**"],
+        ...(isCodexSeatbeltSandbox ? { useFsEvents: false, usePolling: true } : {}),
+      },
     },
     plugins: [
       vinext(),

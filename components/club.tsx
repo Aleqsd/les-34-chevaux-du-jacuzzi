@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, type CSSProperties, type FormEvent, type PointerEvent } from "react";
+import { lazy, Suspense, useCallback, useEffect, useRef, useState, type CSSProperties, type FormEvent, type PointerEvent } from "react";
 import { ArrowDown, ArrowRight, ArrowUpRight, CalendarDays, Check, ChevronLeft, ChevronRight, Clapperboard, Clock3, ExternalLink, Film, Heart, LoaderCircle, Plus, Search, ShieldCheck, Sparkles, Sun, Trophy, ThumbsDown, ThumbsUp, Users, Waves, X } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -11,7 +11,8 @@ import { VillaScene } from "@/components/villa-scene";
 import { CinemaLounge } from "@/components/cinema-lounge";
 import { DeleteMovie } from "@/components/delete-movie";
 import siteRelease from "@/lib/site-release.json";
-import { CookieGame } from "@/components/cookie-game";
+import { CookieWonderQG } from "@/components/cookie-wonder";
+const CookieGame=lazy(()=>import("@/components/cookie-game").then(m=>({default:m.CookieGame})));
 import { Cookie } from "lucide-react";
 import { NextActivity } from "@/components/next-activity";
 import { CrewLeaderboard } from "@/components/crew-leaderboard";
@@ -58,6 +59,8 @@ const blankMovie = (title: string): Movie => ({ id:`manual-${crypto.randomUUID()
 
 export default function Club() {
   const [view, setView] = useState("lobby");
+  useEffect(()=>{const list=document.querySelector(".main-nav");if(!list)return;const header=document.querySelector<HTMLElement>(".topbar"),shell=header?.closest<HTMLElement>(".app-shell");const reveal=()=>{if(header&&shell)shell.style.setProperty("--club-header-height",header.offsetHeight+"px");const active=list.querySelector("[data-state=active]");if(!active)return;const a=active.getBoundingClientRect(),b=list.getBoundingClientRect();if(a.right>b.right)list.scrollLeft+=a.right-b.right+4;else if(a.left<b.left)list.scrollLeft-=b.left-a.left+4;};reveal();const observer=new ResizeObserver(reveal);observer.observe(list);if(header)observer.observe(header);return()=>observer.disconnect();},[view]);
+  const [arcadeHorizon,setArcadeHorizon]=useState<string|undefined>();
   const [transition,setTransition]=useState("");
   const transitionTimers=useRef<ReturnType<typeof setTimeout>[]>([]);
   const [selectPlan,setSelectPlan]=useState<Proposal|null>(null);
@@ -116,10 +119,11 @@ export default function Club() {
     finally { if (request === refreshRequest.current) setLoaded(true); }
   },[]);
   const loadCatalog = useCallback(async () => { setCatalogError(""); try { const r = await api<{movies:Movie[]}>("/api/movies"); setCatalog(r.movies); } catch(e) { setCatalogError((e as Error).message); } },[]);
-  useEffect(()=>{ try { const saved = localStorage.getItem("jacuzzi-prenom"); if(saved) {setPerson(saved);setNameDraft(saved);} } catch {} void load(); void loadCatalog();
+  useEffect(()=>{ try { const saved = localStorage.getItem("jacuzzi-prenom"); if(saved) {setPerson(saved);setNameDraft(saved);} } catch {} void load();
     const timer=setInterval(()=>{if(!document.hidden)void load();},15000);
     const wake=()=>{if(!document.hidden)void load();}; document.addEventListener("visibilitychange",wake); return()=>{clearInterval(timer);document.removeEventListener("visibilitychange",wake);};
-  },[load,loadCatalog]);
+  },[load]);
+  useEffect(()=>{if(view==="cinema"||searchOpen)void loadCatalog();},[view,searchOpen,loadCatalog]);
   useEffect(()=>{
     if (!searchOpen) return;
     const q=query.trim(); setSearchError("");
@@ -220,7 +224,7 @@ export default function Club() {
     <ClubEffects/>
     {transition&&<div className={`universe-transition to-${transition}`} aria-hidden="true"><span/><span/><b>{transition==="cinema"?"JACUZZI PICTURES":transition==="activities"?"ON SORT DU BAIN":transition==="ideas"?"LA BOÎTE À IDÉES":transition==="arcade"?"ON PRÉCHAUFFE LES FOURS":transition==="rewards"?"TES MOMENTS DE GLOIRE":"RETOUR AU QG"}</b></div>}
     <div className="ambient" aria-hidden="true"/>
-    <Tabs value={view} onValueChange={goTo} className="app-shell">
+    <Tabs value={view} onValueChange={goTo} className="app-shell layout-refresh" data-section={view}>
       <header className="topbar">
         <a className="brand" href="/" aria-label="Les 34 Chevaux du Jacuzzi, accueil"><span className="brand-symbol">34<Waves size={27}/></span><span>LES 34 CHEVAUX<small>DU JACUZZI</small></span></a>
         <TabsList className="main-nav"><TabsTrigger value="lobby"><Waves size={17}/>Le QG</TabsTrigger><TabsTrigger value="cinema"><Clapperboard size={17}/>Cinéma</TabsTrigger><TabsTrigger value="activities"><CalendarDays size={17}/>Programme</TabsTrigger><TabsTrigger value="ideas"><Lightbulb size={17}/>Idées</TabsTrigger><TabsTrigger value="rewards"><Trophy size={17}/>Récompenses</TabsTrigger><TabsTrigger value="arcade"><Cookie size={17}/>Arcade</TabsTrigger></TabsList>
@@ -229,7 +233,7 @@ export default function Club() {
       <main>
         <div className="edition-line"><span><span className="spark">✳</span> LE QG DU CREW</span><span>20 — 27 SEPTEMBRE 2026 <span className="edition-year">/ ÉDITION 01</span></span></div>
         <TabsContent value="lobby" className="view-panel lobby-panel">
-          <NextActivity state={state} onProgramme={()=>goTo("activities")} onOpen={(id,planId)=>planId?setRevealId(planId):setActivityDetail(id)}/><VillaScene members={presence.members} profiles={state.profiles} online={presence.online} person={person} onMove={(room,action)=>identify(()=>presence.move(room,action))} onCinema={()=>goTo("cinema")} onProgramme={()=>goTo("activities")} onWardrobe={()=>identify(()=>setAvatarOpen(true))}/>
+          <div className="qg-overview"><CookieWonderQG onOpen={projectId=>{setArcadeHorizon("wonder:"+projectId);goTo("arcade");}}/><NextActivity state={state} onProgramme={()=>goTo("activities")} onOpen={(id,planId)=>planId?setRevealId(planId):setActivityDetail(id)}/></div><VillaScene members={presence.members} profiles={state.profiles} online={presence.online} person={person} onMove={(room,action)=>identify(()=>presence.move(room,action))} onCinema={()=>goTo("cinema")} onProgramme={()=>goTo("activities")} onWardrobe={()=>identify(()=>setAvatarOpen(true))}/>
           {loadError&&<div className="error-banner" role="alert">{loadError}<button onClick={()=>void load()}>Réessayer</button></div>}
           <div className="lobby-strip"><span><b>{films.length}</b> films à départager</span><span><b>{activities.length}</b> plans à vivre</span><span><b>{state.votes.length}</b> votes exprimés</span><button onClick={()=>identify(()=>setAvatarOpen(true))}><CrewAvatar name={person||"Alex"} small/>Personnaliser mon avatar<ArrowUpRight size={16}/></button></div>
           <CrewLeaderboard state={state} person={person} onRewards={()=>goTo("rewards")}/><SelectedPlans state={state} onReveal={setRevealId}/>
@@ -289,7 +293,7 @@ export default function Club() {
         </TabsContent>
         <TabsContent value="ideas" className="view-panel"><FeatureIdeas {...social} renderVotes={id=>Votes({id,slot:"idea"})} loaded={loaded} error={loadError} onRetry={()=>void load()}/></TabsContent>
         <TabsContent value="rewards" className="view-panel"><RewardsPage person={person} peak={peak} currentVotes={state.votes.filter(v=>voterKey(v.author)===voterKey(person)).length} onReplay={unlocks.replay} onWardrobe={()=>identify(()=>setAvatarOpen(true))} onIdentify={()=>identify(()=>{})}/></TabsContent>
-        <TabsContent value="arcade" className="view-panel"><CookieGame person={person} identify={identify} onWardrobe={()=>identify(()=>setAvatarOpen(true))} standings={state.cookieProgress} onProgress={(author,player)=>{++refreshRequest.current;setState(current=>({...current,cookieProgress:[...current.cookieProgress.filter(p=>p.authorKey!==voterKey(author)),{authorKey:voterKey(author),author,lifetime:Math.max(player.lifetime,current.cookieProgress.find(p=>p.authorKey===voterKey(author))?.lifetime??0),clicks:player.clicks,prestige:player.prestige}]}));}}/></TabsContent>
+        <TabsContent value="arcade" className="view-panel">{view==="arcade"&&<Suspense fallback={<p className="loading-line" role="status">On ouvre l’Arcade…</p>}><CookieGame initialHorizon={arcadeHorizon} person={person} identify={identify} onWardrobe={()=>identify(()=>setAvatarOpen(true))} standings={state.cookieProgress} onProgress={(author,player)=>{setState(current=>({...current,cookieProgress:[...current.cookieProgress.filter(p=>p.authorKey!==voterKey(author)),{authorKey:voterKey(author),author,lifetime:Math.max(player.lifetime,current.cookieProgress.find(p=>p.authorKey===voterKey(author))?.lifetime??0),clicks:player.clicks,prestige:player.prestige}]}));}}/></Suspense>}</TabsContent>
         <CrewCards state={state}/>
         <footer><a className="footer-brand" href="/">LES 34 CHEVAUX DU JACUZZI <Waves size={19}/></a><a className="contribute-link" href="https://github.com/Aleqsd/les-34-chevaux-du-jacuzzi" target="_blank" rel="noopener noreferrer"><img className="github-mark" src="/github.svg" alt="" width={19} height={19}/>Code ouvert · Viens contribuer<ArrowUpRight size={15}/></a><a className="tmdb-credit" href="https://www.themoviedb.org" target="_blank" rel="noopener noreferrer"><img src="/tmdb.svg" alt="TMDB"/>Données cinéma</a><p>This product uses the TMDB API but is not endorsed or certified by TMDB.</p><p className="emoji-credit">Emojis : <a href="https://github.com/twitter/twemoji" target="_blank" rel="noopener noreferrer">Twemoji, Twitter et contributeurs</a> · <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">CC BY 4.0</a></p><div className="site-release"><span>VERSION {siteRelease.version}</span><span>Dernière mise à jour · <time dateTime={siteRelease.updatedAt}>{new Intl.DateTimeFormat("fr-FR",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit",timeZone:"Europe/Paris"}).format(new Date(siteRelease.updatedAt))} · Paris</time></span></div></footer>
       </main>

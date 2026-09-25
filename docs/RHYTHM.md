@@ -1,0 +1,3 @@
+# Rythme du jacuzzi
+
+Implementation notes: fixed 64-note chart at 110 BPM, numbered aim circles and approach rings. Challenge: 82% accuracy, at most 8 misses. Practice uses the same chart at 70% speed. Grades: 100/85/50/0 at 80/145/210 ms. Stray presses cost 1 accuracy point. No cost or retry cooldown. Win grants +25% workshop production and manual/automatic click yield for 24 real hours. Bonus never stacks or extends while active, and survives prestige. Server calculates the result from a bounded replay, checks run identity and elapsed time, and persists through existing UUID receipts. This verifies game rules, not human input authenticity.
