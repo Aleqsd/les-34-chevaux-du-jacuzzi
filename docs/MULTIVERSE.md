@@ -1,6 +1,8 @@
-# Progression après 10³⁰ — v26
+# Progression après 10³⁰ — v28
 
-Le catalogue actuel compte **47 bâtiments, 225 recettes, 98 objectifs permanents, 162 succès et 78 avatars à gagner** (en plus des 60 avatars libres). La progression jouable atteint **10¹²⁰** ; le garde-fou numérique fini est placé à `1e150`, avec trente ordres de grandeur de réserve.
+Le catalogue actuel compte **56 bâtiments, 270 recettes, 116 objectifs permanents, 183 succès et 78 avatars à gagner** (en plus des 60 avatars libres). La progression jouable atteint **10¹⁴⁷** ; le garde-fou numérique fini est placé à `1e200`. La v28 ajoute aussi 9 recettes secrètes permanentes et trois formes par compagnon : voir [Voyages et achats v28](VOYAGES.md).
+
+## Historique v26
 
 Après les chapitres de l'Aube ajoutés en v25 jusqu'à `1e90`, la v26 ajoute trois chapitres, dix bâtiments aux indices 37 à 46, cinquante recettes, vingt objectifs et vingt-sept succès. Les anciens IDs, indices, seuils et rendements restent inchangés.
 

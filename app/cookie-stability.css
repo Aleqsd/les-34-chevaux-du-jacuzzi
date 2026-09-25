@@ -1,0 +1,20 @@
+/* A stable notification rail prevents transient feedback from resizing the game. */
+.cookie-game .cookie-status-feed{height:58px;min-height:58px;max-height:58px;overflow-y:auto;overflow-x:hidden;scrollbar-gutter:stable;gap:0;contain:layout;overflow-anchor:none}
+.cookie-game .cookie-status-feed:empty{display:flex}
+.cookie-game .cookie-status-feed .error-banner{order:-2;margin:0;min-height:48px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:5px 12px;font-size:12px}
+.cookie-game .cookie-status-feed .error-banner button{min-height:36px;flex-shrink:0}
+.cookie-game .cookie-status-feed .cookie-golden-callout{padding:5px 12px!important;min-height:48px;height:48px;box-sizing:border-box}
+.cookie-game .cookie-status-feed .golden-callout-icon{width:30px;height:30px;flex:none}
+.cookie-game .cookie-status-feed .cookie-golden-callout button{min-height:36px;padding-top:5px;padding-bottom:5px}
+.cookie-game .cookie-bonus-bar{min-height:44px}
+.cookie-game .cookie-status-feed .cookie-error,.cookie-game .cookie-status-feed .cookie-offline{margin:0;min-height:46px;flex-shrink:0}
+body.cookie-fullscreen .cookie-game .cookie-status-feed,body.cookie-fullscreen .cookie-game[data-view=atelier] .cookie-status-feed:not(:has(> :not(.cookie-golden-callout,.cookie-bonus-bar:empty))){display:flex!important;flex:0 0 50px;height:50px;min-height:50px;max-height:50px;overflow-y:auto;overflow-anchor:none}
+.cookie-game .cookie-building-list,.cookie-game .cookie-tabs>[role=tabpanel]{overflow-anchor:none}
+.cookie-game .cookie-purchase-pending{display:flex;align-items:center;justify-content:center;gap:6px;min-height:22px;font-size:12px;color:#b6d9dc;font-variant-numeric:tabular-nums;margin:0}
+.cookie-game .cookie-purchase-pending[data-pending=false]{visibility:hidden}
+.cookie-shop-actions{display:flex;align-items:stretch;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.cookie-game .cookie-max-all{display:flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:7px 13px;border:1px solid #ffd48688;border-radius:12px;background:linear-gradient(135deg,#593e22,#312d2b);color:#ffdb9a;text-align:left;cursor:pointer}
+.cookie-max-all span{display:flex;flex-direction:column;gap:2px}.cookie-max-all strong{font-size:14px;line-height:1.1}.cookie-max-all small{font-size:10px;line-height:1.2;font-variant-numeric:tabular-nums}
+.cookie-max-all:disabled{opacity:.48;cursor:default}.cookie-max-all:not(:disabled):hover{border-color:#ffdb9a;background:#59412a}.cookie-max-all:focus-visible{outline:2px solid #ffdc99;outline-offset:3px}
+@media(max-width:600px){.cookie-shop-actions{width:100%;justify-content:space-between;gap:6px}.cookie-game .cookie-max-all{padding:6px 9px;flex:1}.cookie-shop-actions .cookie-bulk{flex:1}}
+@media(max-height:520px){body.cookie-fullscreen .cookie-game .cookie-status-feed,body.cookie-fullscreen .cookie-game[data-view=atelier] .cookie-status-feed:not(:has(> :not(.cookie-golden-callout,.cookie-bonus-bar:empty))){flex-basis:44px;height:44px;min-height:44px;max-height:44px}}

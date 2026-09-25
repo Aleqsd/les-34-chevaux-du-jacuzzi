@@ -11,6 +11,8 @@ import "./cookie-talents.css";
 import "./cookie-encounters.css";
 import "./cookie-rhythm.css";
 import "./layout-refresh.css";
+import "./cookie-voyages.css";
+import "./cookie-stability.css";
 
 export const metadata: Metadata = {
   title: "Les 34 Chevaux du Jacuzzi — Le QG",

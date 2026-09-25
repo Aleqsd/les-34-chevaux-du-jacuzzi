@@ -1,0 +1,61 @@
+{
+  "generatedWith": "built-in image_gen",
+  "assets": [
+    {
+      "file": "v28-destinations-triptych.png",
+      "width": 2172,
+      "height": 724,
+      "prompt": "Use case: stylized-concept\nAsset type: original raster game environment atlas for three destination cards.\nPrimary request: create ONE wide triptych, exactly 3:1 aspect ratio, three EQUAL SQUARE PANELS in one horizontal row. The panel cuts occur at exactly one-third and two-thirds of the canvas width. No frames, gutters or text. Each scene is independent, edge-to-edge, and centered within its own third so a square crop produces a complete beautiful scene.\nLEFT THIRD — Royaume des paradoxes: impossible floating cobalt and turquoise confectionery islands against deep midnight navy space, mirrored staircases rising and descending at impossible angles, sugary architectural wonders and luminous turquoise focal points.\nMIDDLE THIRD — Four des origines: a golden primordial magical bakery furnace, a majestic ancient oven as the central focus, glowing amber sugar crystals and delicate stars in a dark navy cosmic backdrop; rich warm golden illumination.\nRIGHT THIRD — Dernier banquet: a majestic violet and rose celestial banquet table stretching into infinity, luminous cookies arranged elegantly, graceful cosmic architecture and bright pink-violet highlights in deep navy space.\nStyle/medium: polished whimsical kawaii painterly 3D fantasy game environment art, premium mobile game illustration, richly detailed sculptural forms and soft tactile surfaces, beautiful cinematic lighting, enchanting and welcoming.\nComposition/framing: wide 3:1 atlas, three square scenes with their main visual focus centered within the individual panel. Keep all major objects safely inside their own panel. Distinct landscapes clearly separated at the two exact thirds only, no extra panels.\nConstraints: original artwork, no UI screenshot, no lettering, no numbers, no labels, no logo, no watermark, no people or characters. Opaque dark navy background. The destination names describe scenes only and must never be written in the image."
+    },
+    {
+      "file": "v28-evolution-shrines-triptych.png",
+      "width": 2172,
+      "height": 724,
+      "prompt": "Use case: stylized-concept\nAsset type: original raster evolution shrine background atlas used behind existing circular kawaii companion avatars.\nPrimary request: create ONE wide triptych, exactly 3:1 aspect ratio, three EQUAL SQUARE PANELS in one horizontal row. The only scene cuts are at exactly one-third and two-thirds of the canvas width. No frames, gutters, text or characters. Each independent square panel is centered and fully usable as a card background.\nLEFT THIRD: a small mint and cyan companion sanctuary, gentle luminous stone arch, tiny subtle magical sparks, a restrained circular ambient glow and soft mint light against deep midnight navy.\nMIDDLE THIRD: an evolved golden radiant shrine, elegant sculptural arches and warm golden ornament, a refined amber halo with rays gently radiating outward against deep midnight navy.\nRIGHT THIRD: a final mythic violet and cyan celestial shrine, majestic celestial architecture, brilliant crown-like pattern of light above and around the shrine, refined violet and cyan luminous rays against deep midnight navy.\nComposition/framing: each panel's central circular region is mostly quiet dark navy negative space where an existing circular avatar will later be overlaid. Keep visual details, shrine arches, stars and glow mainly around the perimeter and upper sides. No avatar, creature, silhouette, person or object filling the central quiet region. All shrine decoration stays inside its own square. Balanced symmetrical framing in each panel.\nStyle/medium: premium polished whimsical kawaii painterly 3D fantasy game illustration, smooth tactile forms, soft bloom, magical beautiful lighting, increasingly spectacular progression from mint sanctuary to golden shrine to mythic violet-cyan shrine.\nConstraints: opaque dark navy background, original artwork, no UI screenshot, no text, no letters, no numerals, no labels, no icons, no logos, no watermark, no characters. No extra panels."
+    }
+  ],
+  "cropping": {
+    "panelWidth": 724,
+    "panelHeight": 724,
+    "sourceRects": [
+      [
+        0,
+        0,
+        724,
+        724
+      ],
+      [
+        724,
+        0,
+        724,
+        724
+      ],
+      [
+        1448,
+        0,
+        724,
+        724
+      ]
+    ],
+    "cssBackgroundSize": "300% 100%",
+    "cssBackgroundPositions": [
+      "0% 50%",
+      "50% 50%",
+      "100% 50%"
+    ]
+  },
+  "visualInspection": "Both outputs visually inspected. Distinct three-panel compositions, no text or characters. Destinations retain centered subjects; shrines retain quiet dark central avatar regions.",
+  "integration": {
+    "method": "Three equal 724 x 724 crops from each original triptych, WebP quality 88",
+    "destinations": [
+      "voyage-paradox.webp",
+      "voyage-genesis.webp",
+      "voyage-banquet.webp"
+    ],
+    "evolution": [
+      "companion-shrine-1.webp",
+      "companion-shrine-2.webp",
+      "companion-shrine-3.webp"
+    ]
+  }
+}

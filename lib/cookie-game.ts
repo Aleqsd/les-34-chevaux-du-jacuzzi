@@ -102,7 +102,16 @@ export const BUILDINGS=[
  {"id":"ocean","name":"Océan des éternités","description":"Les fournées voguent d’un commencement à l’autre.","price":5e+109,"cps":1e+57},
  {"id":"atlas","name":"Atlas des impossibles","description":"Chaque carte dessine un monde où le beurre ne manque jamais.","price":5e+112,"cps":3e+58},
  {"id":"sanctuary","name":"Sanctuaire des 34","description":"Trente-quatre sabots veillent sur la flamme de tous les mondes.","price":5e+115,"cps":1e+60},
- {"id":"celebration","name":"Jubilé du jacuzzi","description":"Tous les horizons se retrouvent pour une fournée sans fin.","price":5e+118,"cps":3e+61}
+ {"id":"celebration","name":"Jubilé du jacuzzi","description":"Tous les horizons se retrouvent pour une fournée sans fin.","price":5e+118,"cps":3e+61},
+ {id:"mirroroven",name:"Four des reflets",description:"La lumière cuit un biscuit. Son reflet en prépare un autre.",price:5e121,cps:1e63},
+ {id:"reversegarden",name:"Jardin à rebours",description:"Les fruits remontent vers les fleurs au parfum de vanille.",price:5e124,cps:3e64},
+ {id:"paradoxpalace",name:"Palais des paradoxes",description:"Deux vérités impossibles, une seule recette parfaite.",price:5e127,cps:1e66},
+ {id:"firstember",name:"Braise première",description:"La première chaleur de tous les univers tient dans ce four.",price:5e130,cps:3e67},
+ {id:"sugarcore",name:"Noyau de sucre",description:"La matière du monde prend doucement le goût du caramel.",price:5e133,cps:1e69},
+ {id:"originforge",name:"Four des origines",description:"Trois flammes réunies donnent naissance à un nouveau ciel.",price:5e136,cps:3e70},
+ {id:"lasttable",name:"Table des éternités",description:"Chaque couvert attend un voyageur de retour.",price:5e139,cps:1e72},
+ {id:"starservice",name:"Service des étoiles",description:"Les constellations apportent les plats du dernier banquet.",price:5e142,cps:3e73},
+ {id:"finalfeast",name:"Dernier banquet",description:"Trente-quatre chevaux lèvent leur coupe au prochain commencement.",price:5e145,cps:1e75}
 ] as const;
 export type Upgrade={id:string;name:string;price:number;building?:number;owned?:number;requires?:string;clicks?:number;earned?:number;clickMultiplier?:number;clickTotalMultiplier?:number;share?:number;synergy?:{source:number;target:number;sourceOwned:number};description:string};
 export const UPGRADES:Upgrade[]=[
@@ -121,7 +130,7 @@ export const UPGRADES:Upgrade[]=[
  {id:"pulse",name:"Pulsation pâtissière",price:1e8,earned:1e8,share:.15,requires:"cadence",description:"Ajoute 15 % de ta production par seconde à chaque clic."},
  {id:"resonance",name:"Résonance du jacuzzi",price:1e12,earned:1e12,share:.25,requires:"pulse",description:"Ajoute 25 % de ta production par seconde à chaque clic (75 % avec toutes les recettes)."}
 ];
-export const CHAPTER_THRESHOLDS=[1e14,1e17,1e20,1e22,1e24,1e26,1e30,1e33,1e36,1e39,1e42,1e45,1e48,1e51,1e54,1e57,1e60,1e63,1e66,1e69,1e72,1e75,1e78,1e81,1e84,1e87,1e90,1e93,1e96,1e99,1e102,1e105,1e108,1e111,1e114,1e117,1e120] as const;
+export const CHAPTER_THRESHOLDS=[1e14,1e17,1e20,1e22,1e24,1e26,1e30,1e33,1e36,1e39,1e42,1e45,1e48,1e51,1e54,1e57,1e60,1e63,1e66,1e69,1e72,1e75,1e78,1e81,1e84,1e87,1e90,1e93,1e96,1e99,1e102,1e105,1e108,1e111,1e114,1e117,1e120,1e123,1e126,1e129,1e132,1e135,1e138,1e141,1e144,1e147] as const;
 export const buildingUnlock=(index:number)=>index<10?0:CHAPTER_THRESHOLDS[index-10]??Infinity;
 export const buildingUnlocked=(p:CookiePlayer,index:number)=>p.lifetime>=buildingUnlock(index);
 UPGRADES.push(
@@ -158,15 +167,24 @@ UPGRADES.push(
 );
 // Append the Jubilee era after every v25 recipe.
 UPGRADES.push(
- ...BUILDINGS.slice(37).flatMap((b,j)=>[
+ ...BUILDINGS.slice(37,47).flatMap((b,j)=>[
   {id:b.id+"_double",name:b.name+" · rivage nouveau",price:b.price*20,building:j+37,owned:10,earned:buildingUnlock(j+37),description:"Double la production de ce bâtiment."},
   {id:b.id+"_master",name:b.name+" · rêve éveillé",price:b.price*250,building:j+37,owned:25,earned:buildingUnlock(j+37),requires:b.id+"_double",description:"Double encore la production de ce bâtiment."},
   {id:b.id+"_signature",name:b.name+" · recette du jubilé",price:b.price*1200,building:j+37,owned:50,earned:buildingUnlock(j+37),requires:b.id+"_master",description:"Double la production après le rêve éveillé."},
  ]),
- ...BUILDINGS.slice(37).flatMap((b,j)=>[1,2].map((back,k)=>{
+ ...BUILDINGS.slice(37,47).flatMap((b,j)=>[1,2].map((back,k)=>{
   const target=j+37,source=target-back;
   return {id:"link_"+BUILDINGS[source].id+"_"+b.id,name:b.name+(k?" · mémoire des ailleurs":" · fil des lendemains"),price:b.price*(k?500:100),earned:buildingUnlock(target),synergy:{source,target,sourceOwned:k?100:50},description:b.name+" : +0,2 % par "+BUILDINGS[source].name+" possédé, jusqu’à +50 %."};
  }))
+);
+// New recipes follow the entire historical catalog, preserving every stored ID.
+UPGRADES.push(
+ ...BUILDINGS.slice(47).flatMap((b,j)=>[
+  {id:b.id+"_double",name:b.name+" · éclat premier",price:b.price*20,building:j+47,owned:10,earned:buildingUnlock(j+47),description:"Double la production de ce bâtiment."},
+  {id:b.id+"_master",name:b.name+" · mémoire vive",price:b.price*250,building:j+47,owned:25,earned:buildingUnlock(j+47),requires:b.id+"_double",description:"Double encore la production de ce bâtiment."},
+  {id:b.id+"_signature",name:b.name+" · ultime saveur",price:b.price*1200,building:j+47,owned:50,earned:buildingUnlock(j+47),requires:b.id+"_master",description:"Double la production après la mémoire vive."}
+ ]),
+ ...BUILDINGS.slice(47).flatMap((b,j)=>[1,2].map((back,k)=>{const target=j+47,source=target-back;return {id:"link_"+BUILDINGS[source].id+"_"+b.id,name:b.name+(k?" · pacte des voyageurs":" · traversée des mondes"),price:b.price*(k?500:100),earned:buildingUnlock(target),synergy:{source,target,sourceOwned:k?100:50},description:b.name+" : +0,2 % par "+BUILDINGS[source].name+" possédé, jusqu’à +50 %."};}))
 );
 export const COSMIC_CHAPTERS=[
  {name:"Au-delà de la Galaxie",from:10,to:13},
@@ -180,6 +198,9 @@ export const COSMIC_CHAPTERS=[
  {name:"Les rivages du possible",from:37,to:40},
  {name:"Les mondes à inventer",from:40,to:44},
  {name:"Le jubilé des 34",from:44,to:47},
+ {name:"Royaume des paradoxes",from:47,to:50},
+ {name:"Four des origines",from:50,to:53},
+ {name:"Dernier banquet",from:53,to:56},
 ] as const;
 export const COOKIE_AVATARS=[{index:60,name:"Petit Biscuit",threshold:1},{index:61,name:"Donut fraise",threshold:1000},{index:62,name:"Croissant doré",threshold:1e6},{index:63,name:"Cupcake étoilé",threshold:1e9},{index:64,name:"Macaron cosmique",threshold:1e12},{index:65,name:"Roi Cacao",threshold:1e15},
  {index:66,name:"Mochi pêche",threshold:100},{index:67,name:"Chou chantilly",threshold:1e4},{index:68,name:"Gaufre miel",threshold:1e5},{index:69,name:"Pancake fraise",threshold:1e7},{index:70,name:"Éclair chocolat",threshold:1e8},{index:71,name:"Glace pistache",threshold:1e10},{index:72,name:"Bretzel caramel",threshold:1e11},{index:73,name:"Renard pâtissier",threshold:1e13},{index:74,name:"Chat barista",threshold:1e14},{index:75,name:"Dragon flambé",threshold:1e16},{index:76,name:"Licorne bonbon",threshold:1e17},{index:77,name:"Cheval stellaire",threshold:1e18},
@@ -248,7 +269,7 @@ export type Specialization="architect"|"artisan"|"watcher";
 export type ContractKind="produce"|"spend"|"catch";
 export type CookieContract={id:number;kind:ContractKind;acceptedAt:number;referenceRate:number;target:number;reward:number;progress:number;school?:Specialization};
 export type CookieContracts={cycle:number;nextAcceptAt:number;active?:CookieContract;completed:number;byKind:Partial<Record<ContractKind,number>>;bySchool:Partial<Record<Specialization,number>>};
-export type CookiePlayer={balance:number;lifetime:number;runEarned:number;banked:number;clicks:number;buildings:number[];upgrades:string[];prestige:number;resets:number;maxBuildings:number;goldenClicks:number;rushUntil:number;goldenReadyAt:number;achievements:string[];missions:string[];clickCredit:number;autoCredit?:number;nextEventAt?:number;nextEventId?:CookieEventId;eventBuffs?:EventBuffs;maxRecipes?:number;maxBuildingKinds?:number;maxProduction?:number;rebuild?:{run:number;claimed:string[];rewardMultiplier?:number;starterAmount?:number};contracts?:CookieContracts;specialization?:Specialization;specializationChangeAt?:number;trials?:TrialBook;wonder?:WonderBook;decor?:TrialId;wonderDecor?:WonderProjectId;trialBoostUntil?:number;mastery?:MasteryBook;followedGoal?:FollowedGoal;followRevision?:number;rhythm?:RhythmBook;updated:number;version:number};
+export type CookiePlayer={balance:number;lifetime:number;runEarned:number;banked:number;clicks:number;buildings:number[];upgrades:string[];prestige:number;resets:number;maxBuildings:number;goldenClicks:number;rushUntil:number;goldenReadyAt:number;achievements:string[];missions:string[];clickCredit:number;autoCredit?:number;nextEventAt?:number;nextEventId?:CookieEventId;eventBuffs?:EventBuffs;maxRecipes?:number;maxBuildingKinds?:number;maxProduction?:number;rebuild?:{run:number;claimed:string[];rewardMultiplier?:number;starterAmount?:number};contracts?:CookieContracts;specialization?:Specialization;specializationChangeAt?:number;trials?:TrialBook;wonder?:WonderBook;decor?:TrialId;wonderDecor?:WonderProjectId;trialBoostUntil?:number;mastery?:MasteryBook;followedGoal?:FollowedGoal;followRevision?:number;rhythm?:RhythmBook;voyages?:VoyageBook;updated:number;version:number};
 export const freshCookiePlayer=(now:number):CookiePlayer=>({balance:0,lifetime:0,runEarned:0,banked:0,clicks:0,buildings:BUILDINGS.map(()=>0),upgrades:[],prestige:0,resets:0,maxBuildings:0,goldenClicks:0,rushUntil:0,goldenReadyAt:now+60000,achievements:[],missions:[],clickCredit:MANUAL_BURST,updated:now,version:0});
 export const MASTERY_TALENTS=[
  {id:"variety",branch:"synergy",name:"Brigade variée",description:"+0,25 % de production par type de bâtiment possédé et par rang.",requires:null},
@@ -268,7 +289,7 @@ export const MASTERY_COOLDOWN=20*60000;
 export const masteryRank=(p:CookiePlayer,id:MasteryId)=>Math.max(0,Math.min(3,Math.floor(p.mastery?.ranks[id]??0)));
 export const masteryPoints=(p:CookiePlayer)=>Math.floor(COOKIE_ACHIEVEMENTS.filter(a=>p.achievements.includes(a.id)).length/5);
 export const masterySpent=(p:CookiePlayer)=>MASTERY_TALENTS.reduce((n,t)=>n+masteryRank(p,t.id),0);
-export const goldenRushSeconds=(p:CookiePlayer)=>77+3*masteryRank(p,"rush");
+export const goldenRushSeconds=(p:CookiePlayer)=>77+3*masteryRank(p,"rush")+(p.voyages?.equippedRecipe==="souffle"?15:0);
 function applyMastery(p:CookiePlayer,ranks:Partial<Record<MasteryId,number>>,revision:number,now:number){
  if(revision!==(p.mastery?.revision??0))throw Error("Tes talents ont changé dans un autre onglet. Actualise la maîtrise.");
  if(Object.entries(ranks).some(([id,n])=>!MASTERY_TALENTS.some(t=>t.id===id)||!Number.isInteger(n)||n<0||n>3))throw Error("Ce rang de maîtrise est invalide.");
@@ -352,15 +373,23 @@ COOKIE_ACHIEVEMENTS.push(
  ...[1e60,1e75].map((target,i)=>({id:"dawn_flow"+i,name:["Le souffle des éternités","L’univers tourne au four"][i],metric:"production" as const,target}))
 );
 COOKIE_MISSIONS.push(
- ...BUILDINGS.slice(37).map((b,i)=>({id:"jubilee_m"+i,name:b.name+" · nouvel ailleurs",metric:"lifetime" as const,target:buildingUnlock(i+37),reward:buildingUnlock(i+37)*.001})),
- ...BUILDINGS.slice(37).map((b,i)=>({id:"jubilee_build"+i,name:(i+38)+" ateliers pour le jubilé",metric:"buildingKinds" as const,target:i+38,reward:b.price*.1}))
+ ...BUILDINGS.slice(37,47).map((b,i)=>({id:"jubilee_m"+i,name:b.name+" · nouvel ailleurs",metric:"lifetime" as const,target:buildingUnlock(i+37),reward:buildingUnlock(i+37)*.001})),
+ ...BUILDINGS.slice(37,47).map((b,i)=>({id:"jubilee_build"+i,name:(i+38)+" ateliers pour le jubilé",metric:"buildingKinds" as const,target:i+38,reward:b.price*.1}))
 );
 COOKIE_ACHIEVEMENTS.push(
- ...BUILDINGS.slice(37).map((b,i)=>({id:"jubilee_bake"+i,name:["L’écho du premier biscuit","Une marée de lumière","La direction du goûter","Les yeux ouverts sur l’infini","La récolte des lendemains","Le vitrail de chocolat","D’une éternité à l’autre","Cartographier l’impossible","La flamme des 34","Le jubilé sans fin"][i],metric:"lifetime" as const,target:buildingUnlock(i+37)})),
- ...BUILDINGS.slice(37).map((b,i)=>({id:"jubilee_kind"+i,name:(i+38)+" saveurs d’ailleurs",metric:"buildingKinds" as const,target:i+38})),
+ ...BUILDINGS.slice(37,47).map((b,i)=>({id:"jubilee_bake"+i,name:["L’écho du premier biscuit","Une marée de lumière","La direction du goûter","Les yeux ouverts sur l’infini","La récolte des lendemains","Le vitrail de chocolat","D’une éternité à l’autre","Cartographier l’impossible","La flamme des 34","Le jubilé sans fin"][i],metric:"lifetime" as const,target:buildingUnlock(i+37)})),
+ ...BUILDINGS.slice(37,47).map((b,i)=>({id:"jubilee_kind"+i,name:(i+38)+" saveurs d’ailleurs",metric:"buildingKinds" as const,target:i+38})),
  ...[185,195,205,215,225].map((target,i)=>({id:"jubilee_recipe"+i,name:["Le carnet des échos","Les recettes des lendemains","Chef des aurores","Le festin des ailleurs","La table du jubilé"][i],metric:"recipes" as const,target})),
  ...[1e90,1e105].map((target,i)=>({id:"jubilee_flow"+i,name:["La houle des mondes","Le souffle du jubilé"][i],metric:"production" as const,target}))
 );
+COOKIE_MISSIONS.push(...BUILDINGS.slice(47).flatMap((b,j)=>[
+ {id:"voyage_m"+j,name:b.name+" · traversée",metric:"lifetime" as const,target:buildingUnlock(j+47),reward:buildingUnlock(j+47)*.001},
+ {id:"voyage_build"+j,name:(j+48)+" ateliers, un nouveau monde",metric:"buildingKinds" as const,target:j+48,reward:b.price*.1}
+]));
+COOKIE_ACHIEVEMENTS.push(...BUILDINGS.slice(47).flatMap((b,j)=>[
+ {id:"voyage_bake"+j,name:b.name+" · premier voyage",metric:"lifetime" as const,target:buildingUnlock(j+47)},
+ {id:"voyage_kind"+j,name:(j+48)+" saveurs de l’impossible",metric:"buildingKinds" as const,target:j+48}
+]),...[240,255,270].map((target,i)=>({id:"voyage_recipe"+i,name:["Le carnet des paradoxes","Le secret des trois flammes","Le menu du dernier banquet"][i],metric:"recipes" as const,target})));
 export const METRIC_LABELS:Record<Metric,string>={lifetime:"cookies produits",clicks:"clics",maxBuildings:"bâtiments possédés",prestige:"étoiles de prestige",goldenClicks:"cookies dorés récoltés",recipes:"recettes maîtrisées",buildingKinds:"types de bâtiments réunis",production:"cookies / s atteints (hors bonus)",contracts:"contrats terminés",contractKinds:"contrats de chaque type",contractSchools:"contrats dans chaque école"};
 export function formatCookies(n:number){if(n>=1e15)return n.toExponential(2).replace(".",",");if(n>=1e12)return (n/1e12).toLocaleString("fr-FR",{maximumFractionDigits:2})+" T";if(n>=1e9)return (n/1e9).toLocaleString("fr-FR",{maximumFractionDigits:2})+" Md";if(n>=1e6)return (n/1e6).toLocaleString("fr-FR",{maximumFractionDigits:2})+" M";return n.toLocaleString("fr-FR",{maximumFractionDigits:n<10?1:0});}
 export const formatClickPower=(n:number)=>n<100?n.toLocaleString("fr-FR",{maximumFractionDigits:2}):formatCookies(n);
@@ -368,7 +397,7 @@ export function normalizeBuildings(p:CookiePlayer){while(p.buildings.length<BUIL
 const buildingRecipes=BUILDINGS.map((_,i)=>UPGRADES.filter(u=>u.building===i));
 const buildingLinks=BUILDINGS.map((_,i)=>UPGRADES.filter(u=>u.synergy?.target===i));
 export function synergyMultiplier(p:CookiePlayer,index:number){return 1+(buildingLinks[index]??[]).reduce((n,u)=>n+(p.upgrades.includes(u.id)?Math.min(.5,(p.buildings[u.synergy!.source]??0)*.002):0),0)*(1+masteryRank(p,"links")*.1);}
-export function baseProduction(p:CookiePlayer){return BUILDINGS.reduce((sum,b,i)=>sum+b.cps*(p.buildings[i]??0)*synergyMultiplier(p,i)*buildingRecipes[i].reduce((n,u)=>p.upgrades.includes(u.id)?n*2:n,1),0)*(1+p.prestige*.1)*(1+masteryRank(p,"variety")*.0025*p.buildings.filter(n=>n>0).length);}
+export function baseProduction(p:CookiePlayer){return BUILDINGS.reduce((sum,b,i)=>sum+b.cps*(p.buildings[i]??0)*voyageBuildingMultiplier(p,i)*synergyMultiplier(p,i)*buildingRecipes[i].reduce((n,u)=>p.upgrades.includes(u.id)?n*2:n,1),0)*(1+p.prestige*.1)*(1+masteryRank(p,"variety")*.0025*p.buildings.filter(n=>n>0).length);}
 export const TRIAL_BOOST_MS=60*60*1000;
 export const trialBoostMultiplier=(p:CookiePlayer,now=Date.now())=>(p.trialBoostUntil??0)>now?2:1;
 export const production=(p:CookiePlayer,now=Date.now())=>baseProduction(p)*rhythmMultiplier(p,now)*trialBoostMultiplier(p,now)*Math.max(p.rushUntil>now?7:1,(p.eventBuffs?.steamUntil??0)>now?3:1);
@@ -392,11 +421,29 @@ export function recipePurchasePlan(p:CookiePlayer,budget=p.balance){
  for(;;){const next=RECIPE_PURCHASE_ORDER.find(u=>!preview.upgrades.includes(u.id)&&upgradeReady(preview,u)&&cost+u.price<=limit);if(!next)break;recipes.push(next);preview.upgrades.push(next.id);cost+=next.price;}
  return {recipes,cost};
 }
+export const MAX_ALL_UNLOCK=1e75;
+/** Highest unlocked tier first, then use the remaining budget on every lower tier. */
+export function workshopPurchasePlan(p:CookiePlayer,budget=p.balance,now=Date.now()){
+ const purchases:{building:number;quantity:number}[]=[];
+ let remaining=Math.max(0,Math.min(p.balance,COOKIE_CAP,Number.isFinite(budget)?budget:0)),cost=0;
+ if(p.lifetime<MAX_ALL_UNLOCK)return {purchases,cost};
+ const preview={...p,buildings:[...p.buildings],...(p.eventBuffs?{eventBuffs:{...p.eventBuffs}}:{})};
+ for(let building=BUILDINGS.length-1;building>=0;building--){
+  if(!buildingUnlocked(preview,building))continue;
+  let low=0,high=1000-(preview.buildings[building]??0);
+  while(low<high){const mid=Math.ceil((low+high)/2);if(buildingPrice(preview,building,mid,now)<=remaining)low=mid;else high=mid-1;}
+  if(!low)continue;
+  const price=buildingPrice(preview,building,low,now);remaining=Math.max(0,remaining-price);cost+=price;
+  preview.buildings[building]=(preview.buildings[building]??0)+low;purchases.push({building,quantity:low});
+  if(preview.eventBuffs)delete preview.eventBuffs.discountUntil;
+ }
+ return {purchases,cost};
+}
 export const prestigeGain=(p:CookiePlayer)=>Math.max(0,Math.floor(Math.sqrt((p.banked+p.runEarned)/1e9))-p.prestige);
 export function cookieMetric(p:CookiePlayer,metric:Metric){if(metric==="contracts")return p.contracts?.completed??0;if(metric==="contractKinds")return Math.min(...CONTRACT_KINDS.map(k=>p.contracts?.byKind[k]??0));if(metric==="contractSchools")return Math.min(...SPECIALIZATIONS.map(s=>p.contracts?.bySchool[s.id]??0));if(metric==="recipes")return Math.max(p.maxRecipes??0,p.upgrades.length);if(metric==="buildingKinds")return Math.max(p.maxBuildingKinds??0,p.buildings.filter(n=>n>0).length);if(metric==="production")return Math.max(p.maxProduction??0,baseProduction(p));return p[metric];}
 export function award(p:CookiePlayer){p.maxRecipes=cookieMetric(p,"recipes");p.maxBuildingKinds=cookieMetric(p,"buildingKinds");p.maxProduction=cookieMetric(p,"production");p.maxBuildings=Math.max(p.maxBuildings,p.buildings.reduce((a,b)=>a+b,0));p.achievements=[...new Set([...p.achievements,...COOKIE_ACHIEVEMENTS.filter(a=>cookieMetric(p,a.metric)>=a.target).map(a=>a.id)])];}
-// Finite storage guard, far beyond the playable chapters (through 1e60).
-export const COOKIE_CAP=1e150;
+// Finite storage guard, beyond the playable chapters through 1e147.
+export const COOKIE_CAP=1e200;
 const CAP=COOKIE_CAP;
 export const REBUILD_MISSIONS=[
  {id:"r1",name:"Rallumer les fours",metric:"buildings",target:5,reward:500},
@@ -423,7 +470,7 @@ export const SPECIALIZATIONS=[
  {id:"watcher",name:"Veilleur",benefit:"Jusqu’à 12 h hors ligne",description:"Les fours veillent plus longtemps pendant tes absences. Aucun clic automatique hors ligne."}
 ] as const;
 export const SPECIALIZATION_COOLDOWN=20*60000,CONTRACT_COOLDOWN=20*60000;
-export const manualClickPower=(p:CookiePlayer,now=Date.now())=>clickPower(p,now)*(p.specialization==="artisan"?1.25:1)*(1+masteryRank(p,"hands")*.04)*((p.eventBuffs?.manualUntil??0)>now?p.eventBuffs!.manualMultiplier:1);
+export const manualClickPower=(p:CookiePlayer,now=Date.now())=>clickPower(p,now)*voyageManualMultiplier(p)*(p.specialization==="artisan"?1.25:1)*(1+masteryRank(p,"hands")*.04)*((p.eventBuffs?.manualUntil??0)>now?p.eventBuffs!.manualMultiplier:1);
 export const offlineHours=(p:CookiePlayer)=>(p.specialization==="watcher"?12:8)+masteryRank(p,"rest");
 export const CONTRACT_KINDS:ContractKind[]=["produce","spend","catch"];
 export const CONTRACT_RANKS=[{at:0,name:"Commis du crew"},{at:1,name:"Première signature"},{at:5,name:"Livreur des fournées"},{at:20,name:"Intendant du goûter"},{at:60,name:"Maître des commandes"},{at:150,name:"Légende des 34"}] as const;
@@ -460,7 +507,7 @@ export const cookieEvent=(at:number,id?:CookieEventId)=>COOKIE_EVENTS.find(e=>e.
 export function cookieEventReward(p:CookiePlayer,at:number){const e=cookieEvent(at,p.nextEventAt===at?p.nextEventId:undefined);return e.effect==="cookies"||e.effect==="choice"?Math.max(e.minimum,baseProduction(p)*e.seconds)*(1+masteryRank(p,"gifts")*.1):0;}
 const scheduleEvent=(p:CookiePlayer,now:number)=>{p.nextEventAt=now+90000+Math.floor(Math.random()*90001);const pool=COOKIE_EVENTS.filter(e=>e.id!==p.nextEventId);p.nextEventId=pool[Math.floor(Math.random()*pool.length)].id;};
 function startManualEvent(p:CookiePlayer,now:number,multiplier:2|3,seconds:number){const b=p.eventBuffs??(p.eventBuffs={manualMultiplier:multiplier});if((b.manualUntil??0)>now&&b.manualMultiplier>multiplier)return;b.manualMultiplier=multiplier;b.manualUntil=now+seconds*1000;}
-export type CookieAction={kind:"sync"}|{kind:"click";count:number}|{kind:"auto";count:number}|{kind:"event";eventAt:number;choice?:EventChoice}|{kind:"buy";building:number;quantity:number;maxCost?:number}|{kind:"upgrade";upgrade:string}|{kind:"buyRecipes";maxCost:number;run:number}|{kind:"golden"}|{kind:"mission";mission:string}|{kind:"rebuild";mission:string;run:number}|{kind:"contractAccept";contract:ContractKind;cycle:number}|{kind:"contractClaim";contractId:number}|{kind:"contractCancel";contractId:number}|{kind:"specialize";specialization:Specialization;expectedChangeAt:number}|{kind:"prestige"}|{kind:"mastery";ranks:Partial<Record<MasteryId,number>>;revision:number}|{kind:"followGoal";goal:FollowedGoal|null;revision:number}|EndgameAction|RhythmAction;
+export type CookieAction={kind:"sync"}|{kind:"click";count:number}|{kind:"auto";count:number}|{kind:"event";eventAt:number;choice?:EventChoice}|{kind:"buy";building:number;quantity:number;maxCost?:number;run?:number}|{kind:"upgrade";upgrade:string;run?:number}|{kind:"buyRecipes";maxCost:number;run:number}|{kind:"buyAll";maxCost:number;run:number}|{kind:"golden"}|{kind:"mission";mission:string}|{kind:"rebuild";mission:string;run:number}|{kind:"contractAccept";contract:ContractKind;cycle:number}|{kind:"contractClaim";contractId:number}|{kind:"contractCancel";contractId:number}|{kind:"specialize";specialization:Specialization;expectedChangeAt:number}|{kind:"prestige"}|{kind:"mastery";ranks:Partial<Record<MasteryId,number>>;revision:number}|{kind:"followGoal";goal:FollowedGoal|null;revision:number}|EndgameAction|RhythmAction|VoyageAction;
 export function applyCookieAction(p:CookiePlayer,action:CookieAction,now:number,world?:{wonderStage:number}){const offline=settle(p,now);let acceptedClicks=0,purchasedRecipes=0,recipeCost=0,eventReward=0,rebuildBonus=0,contractBonus=0,eventEffect:EventEffect|undefined;
  if(action.kind==="click"){acceptedClicks=Math.min(action.count,Math.floor(p.clickCredit));p.clickCredit-=acceptedClicks;p.clicks+=acceptedClicks;const gain=acceptedClicks*manualClickPower(p,now);earn(p,gain);contractProgress(p,"produce",gain);wonderProgress(p,gain);}
  if(action.kind==="auto"){if(!autoClickRate(p.clicks))throw Error("L’autoclic se débloque à 2 000 clics.");acceptedClicks=Math.min(action.count,Math.floor(p.autoCredit??0));p.autoCredit=(p.autoCredit??0)-acceptedClicks;p.clicks+=acceptedClicks;const gain=acceptedClicks*clickPower(p,now);earn(p,gain);contractProgress(p,"produce",gain);wonderProgress(p,gain);}
@@ -476,8 +523,10 @@ export function applyCookieAction(p:CookiePlayer,action:CookieAction,now:number,
   else{const buffs=p.eventBuffs??(p.eventBuffs={manualMultiplier:2});if(eventEffect==="steam")buffs.steamUntil=now+event.seconds*1000;else buffs.discountUntil=now+event.seconds*1000;}
   contractProgress(p,"catch",1);scheduleEvent(p,now);
  }
+ if((action.kind==="buy"||action.kind==="upgrade")&&action.run!==undefined&&action.run!==p.resets)throw Error("Cet achat appartient à une ancienne fournée. Actualise ton atelier.");
  if(action.kind==="buy"){if(!BUILDINGS[action.building]||!buildingUnlocked(p,action.building))throw Error("Ce bâtiment attend ton prochain chapitre.");const cost=buildingPrice(p,action.building,action.quantity,now);if(action.maxCost!==undefined&&cost>action.maxCost)throw Error("Le prix a changé : l’offre du marchand est terminée. Vérifie le nouveau prix avant d’acheter.");if(p.buildings[action.building]+action.quantity>1000)throw Error("1000 exemplaires maximum par bâtiment.");if(p.balance+1e-6<cost)throw Error("Pas encore assez de cookies.");p.balance=Math.max(0,p.balance-cost);p.buildings[action.building]+=action.quantity;if(p.eventBuffs)delete p.eventBuffs.discountUntil;contractProgress(p,"spend",cost);}
  if(action.kind==="upgrade"){const u=UPGRADES.find(u=>u.id===action.upgrade);if(!u||p.upgrades.includes(u.id)||!upgradeReady(p,u))throw Error("Cette amélioration n’est pas disponible.");if(p.balance+1e-6<u.price)throw Error("Pas encore assez de cookies.");p.balance=Math.max(0,p.balance-u.price);p.upgrades.push(u.id);contractProgress(p,"spend",u.price);}
+ if(action.kind==="buyAll"){if(action.run!==p.resets)throw Error("Cet achat appartient à une ancienne fournée.");if(p.lifetime<MAX_ALL_UNLOCK)throw Error("Max All se débloque à 10⁷⁵ cookies produits au total.");const plan=workshopPurchasePlan(p,action.maxCost,now);if(!plan.purchases.length)throw Error("Aucun bâtiment achetable avec ce budget.");p.balance=Math.max(0,p.balance-plan.cost);for(const lot of plan.purchases)p.buildings[lot.building]+=lot.quantity;if(p.eventBuffs)delete p.eventBuffs.discountUntil;contractProgress(p,"spend",plan.cost);}
  if(action.kind==="buyRecipes"){if(action.run!==p.resets)throw Error("Cet achat appartient à une ancienne fournée. Vérifie tes recettes avant de réessayer.");const plan=recipePurchasePlan(p,Math.min(p.balance,action.maxCost));if(!plan.recipes.length)throw Error("Aucune recette achetable avec ce budget. Actualise ton atelier.");p.balance=Math.max(0,p.balance-plan.cost);p.upgrades.push(...plan.recipes.map(u=>u.id));contractProgress(p,"spend",plan.cost);purchasedRecipes=plan.recipes.length;recipeCost=plan.cost;}
  if(action.kind==="golden"){if(now<p.goldenReadyAt)throw Error("Le prochain cookie doré se prépare.");earn(p,Math.max(25,baseProduction(p)*60));p.rushUntil=Math.max(p.rushUntil,now+goldenRushSeconds(p)*1000);p.goldenReadyAt=now+300000;p.goldenClicks++;}
  if(action.kind==="mission"){const m=COOKIE_MISSIONS.find(m=>m.id===action.mission);if(!m||p.missions.includes(m.id)||cookieMetric(p,m.metric)<m.target)throw Error("Cet objectif n’est pas encore disponible.");p.missions.push(m.id);earn(p,m.reward);}
@@ -510,6 +559,7 @@ export function applyCookieAction(p:CookiePlayer,action:CookieAction,now:number,
  if(action.kind==="followGoal"){if(action.revision!==(p.followRevision??0))throw Error("Ton objectif a changé dans un autre onglet. Réessaie.");p.followRevision=(p.followRevision??0)+1;if(action.goal){validateFollowedGoal(p,action.goal);p.followedGoal={...action.goal};}else delete p.followedGoal;}
  applyEndgameAction(p,action,now,world);
  applyRhythmAction(p,action,now);
+ applyVoyageAction(p,action,now);
  if(!p.nextEventAt||now>p.nextEventAt+EVENT_WINDOW_MS)scheduleEvent(p,now);
  award(p);return {offline,acceptedClicks,...(purchasedRecipes?{purchasedRecipes,recipeCost}:{}),...(rebuildBonus?{rebuildBonus}:{}),...(contractBonus?{contractBonus}:{}),...(eventEffect?{eventReward,eventEffect}:{})};
 }
@@ -617,4 +667,125 @@ function applyEndgameAction(p:CookiePlayer,a:CookieAction,now:number,world?:{won
   if(!w||!t||t.stage!==a.stage||w.completed.includes(a.stage)||t.progress<t.target)throw Error("Ta contribution n’est pas encore prête pour cette étape.");
   w.completed.push(a.stage);delete w.active;
  }
+}
+
+// Voyages are permanent side progression. They never mint cookies or prestige.
+export const INGREDIENT_IDS=["dew","cocoa","crystal","ember","pearl","dust"] as const;
+export type IngredientId=typeof INGREDIENT_IDS[number];
+export const INGREDIENTS=[
+ {id:"dew",name:"Rosée lunaire",symbol:"◒",color:"#80efcb"},
+ {id:"cocoa",name:"Cacao sauvage",symbol:"◆",color:"#e5b88a"},
+ {id:"crystal",name:"Cristal sucré",symbol:"◇",color:"#93d9ff"},
+ {id:"ember",name:"Braise d’origine",symbol:"✦",color:"#ffb55d"},
+ {id:"pearl",name:"Perle du paradoxe",symbol:"◉",color:"#cbafff"},
+ {id:"dust",name:"Poussière d’étoile",symbol:"✧",color:"#ffafd8"}
+] as const;
+export const VOYAGE_IDS=["grove","lagoon","archive","paradox","genesis","banquet"] as const;
+export type VoyageId=typeof VOYAGE_IDS[number];
+type VoyageDestination={id:VoyageId;name:string;threshold:number;minutes:number;primary:IngredientId;secondary:IngredientId;affinity:number;image:string;panel?:number;description:string;encounters:readonly [string,string];relics:readonly [string,string]};
+export const VOYAGE_DESTINATIONS:VoyageDestination[]=[
+ {id:"grove",name:"Clairière des miettes",threshold:1e6,minutes:3,primary:"dew",secondary:"cocoa",affinity:0,image:"/wonder-garden.webp",description:"Des fleurs de sucre cachent les premiers ingrédients du voyage.",encounters:["Un ruisseau de rosée traverse la clairière. Des inscriptions brillent sous les feuilles.","Un chemin tranquille longe le verger. Une porte minuscule s’ouvre dans le plus vieux tronc."],relics:["La carte sous la feuille","La clé du vieux verger"]},
+ {id:"lagoon",name:"Lagon des étoiles",threshold:1e12,minutes:6,primary:"cocoa",secondary:"crystal",affinity:1,image:"/cosmic-bakery-island.webp",description:"La marée dépose des cristaux dans le sable de cacao.",encounters:["La plage déborde de cacao. Au loin, un phare clignote dans une langue oubliée.","Le ponton ramène au camp. Sous l’eau, une cloche sonne sans faire de bruit."],relics:["Le chant du phare","La cloche du lagon"]},
+ {id:"archive",name:"Archives des aurores",threshold:1e24,minutes:9,primary:"crystal",secondary:"ember",affinity:2,image:"/wonder-observatory.webp",description:"Les recettes disparues dorment dans un observatoire de verre.",encounters:["Des cristaux poussent entre les rayonnages. Un livre refuse de rester fermé.","La grande galerie est éclairée. Un escalier conduit à une pièce absente de tous les plans."],relics:["Le livre qui se souvient","La chambre sans numéro"]},
+ {id:"paradox",name:"Royaume des paradoxes",threshold:1e123,minutes:12,primary:"ember",secondary:"pearl",affinity:0,image:"/voyage-paradox.webp",description:"Deux chemins opposés arrivent au même four. Choisis ce que tu rapporteras.",encounters:["La braise gèle au bord d’un escalier inversé. Un miroir montre le lendemain.","Le palais possède deux sorties. La troisième n’existe que dans son reflet."],relics:["Le souvenir de demain","La troisième sortie"]},
+ {id:"genesis",name:"Four des origines",threshold:1e132,minutes:15,primary:"pearl",secondary:"dust",affinity:1,image:"/voyage-genesis.webp",description:"Les premières flammes transforment la matière en ingrédients impossibles.",encounters:["Les perles naissent dans le feu. Trois flammes semblent raconter la même histoire.","Le foyer central est stable. Une étincelle indique un passage avant le commencement."],relics:["Le pacte des trois flammes","L’étincelle avant le temps"]},
+ {id:"banquet",name:"Dernier banquet",threshold:1e141,minutes:18,primary:"dust",secondary:"dew",affinity:2,image:"/voyage-banquet.webp",description:"Les derniers invités ont laissé des étoiles sur la nappe du cosmos.",encounters:["Une pluie d’étoiles recouvre la table. Le menu porte le nom d’un invité inconnu.","Les lanternes montrent le retour. Une trente-cinquième chaise attend dans l’ombre."],relics:["Le menu de l’invité","La chaise du prochain monde"]}
+];
+export const SECRET_RECIPE_IDS=["galette","nectar","caramel","constellation","biscuit","perles","souffle","menu","symphony"] as const;
+export type SecretRecipeId=typeof SECRET_RECIPE_IDS[number];
+export const SECRET_RECIPES:{id:SecretRecipeId;name:string;cost:Partial<Record<IngredientId,number>>;description:string}[]=[
+ {id:"galette",name:"Galette de la clairière",cost:{dew:6,cocoa:4},description:"Les dix premiers bâtiments produisent 50 % de plus."},
+ {id:"nectar",name:"Nectar de lune",cost:{dew:8,crystal:3},description:"Tous les bâtiments produisent 15 % de plus."},
+ {id:"caramel",name:"Caramel de braise",cost:{cocoa:8,ember:2},description:"Les clics manuels produisent 50 % de plus. Le pilote garde sa puissance."},
+ {id:"constellation",name:"Tarte aux constellations",cost:{crystal:8,dust:3},description:"Les bâtiments du Four dimensionnel au Jubilé produisent 35 % de plus."},
+ {id:"biscuit",name:"Biscuit impossible",cost:{ember:6,pearl:3},description:"Les neuf bâtiments après le Jubilé produisent 40 % de plus."},
+ {id:"perles",name:"Perles de voyage",cost:{pearl:6,dew:4},description:"Les voyages lancés avec cette recette gagnent 3 ingrédients principaux. Ce bonus reste acquis après le départ."},
+ {id:"souffle",name:"Soufflé des étoiles",cost:{dust:5,dew:5},description:"Le cookie doré récolté avec cette recette prolonge sa fournée ×7 de 15 secondes, même si tu changes ensuite de recette."},
+ {id:"menu",name:"Menu du commencement",cost:{ember:6,dust:4},description:"Tous les bâtiments produisent 25 % de plus."},
+ {id:"symphony",name:"Symphonie du goûter",cost:{cocoa:10,pearl:6},description:"Bâtiments +20 % et clics manuels +30 %."}
+];
+export type CompanionRecord={stage:1|2|3;returns:number;finds:number;secrets:number;regions:VoyageId[]};
+export type VoyageRun={id:number;destination:VoyageId;team:number[];startedAt:number;readyAt:number;step:0|1|2;cargo:Partial<Record<IngredientId,number>>;secrets:string[];choices:string[]};
+export type VoyageBook={revision:number;cycle:number;inventory:Partial<Record<IngredientId,number>>;recipes:SecretRecipeId[];relics:string[];companions:Record<string,CompanionRecord>;active?:VoyageRun;last?:{id:number;destination:VoyageId;team:number[];cargo:Partial<Record<IngredientId,number>>;newRelics:string[]};equippedRecipe?:SecretRecipeId;equippedCompanion?:number;paradoxMode?:"light"|"mirror";paradoxChangeAt?:number;banquetCourse?:number};
+export type VoyageAction=
+ {kind:"voyageStart";destination:VoyageId;team:number[];cycle:number}|
+ {kind:"voyageChoice";runId:number;step:0|1;choice:"gather"|"study"|"safe"|"secret"}|
+ {kind:"voyageClaim"|"voyageCancel";runId:number}|
+ {kind:"secretCraft";recipe:SecretRecipeId;revision:number}|
+ {kind:"secretEquip";recipe:SecretRecipeId|null;revision:number}|
+ {kind:"companionEvolve";companion:number;stage:2|3;revision:number}|
+ {kind:"companionEquip";companion:number|null;revision:number}|
+ {kind:"paradoxSwitch";mode:"light"|"mirror";revision:number}|
+ {kind:"banquetPrepare";course:number;revision:number};
+export const companionRecord=(p:CookiePlayer,index:number):CompanionRecord=>p.voyages?.companions[index]??{stage:1,returns:0,finds:0,secrets:0,regions:[]};
+export const COMPANION_ROLES=[{name:"Éclaireur",description:"Découvrir plusieurs régions"},{name:"Gourmand",description:"Rapporter des ingrédients"},{name:"Gardien",description:"Explorer les passages secrets"}] as const;
+export const companionRole=(index:number)=>((index-60)%3+3)%3;
+export function companionChallenges(p:CookiePlayer,index:number,stage:2|3){const r=companionRecord(p,index),role=companionRole(index);return [
+ {label:"Expéditions terminées avec ce compagnon",value:r.returns,target:stage===2?2:8},
+ role===0?{label:"Régions différentes explorées",value:r.regions.length,target:stage===2?1:3}:role===1?{label:"Ingrédients rapportés",value:r.finds,target:stage===2?15:70}:{label:"Passages secrets explorés",value:r.secrets,target:stage===2?1:6}
+];}
+export const companionCanEvolve=(p:CookiePlayer,index:number,stage:2|3)=>companionRecord(p,index).stage===stage-1&&companionChallenges(p,index,stage).every(c=>c.value>=c.target);
+export const secretCanCraft=(p:CookiePlayer,recipe:typeof SECRET_RECIPES[number])=>!p.voyages?.recipes.includes(recipe.id)&&Object.entries(recipe.cost).every(([id,n])=>(p.voyages?.inventory[id as IngredientId]??0)>=n);
+export function secretCombination(a:IngredientId,b:IngredientId){return a===b?undefined:SECRET_RECIPES.find(r=>Object.keys(r.cost).length===2&&a in r.cost&&b in r.cost);}
+export function voyageTeamBonus(p:CookiePlayer,d:VoyageDestination,team:number[]){return team.reduce((n,id)=>n+(companionRole(id)===d.affinity?1:0)+companionRecord(p,id).stage-1,0)+(p.voyages?.equippedRecipe==="perles"?3:0);}
+export const BANQUET_COURSES=[
+ {name:"L’entrée des voyageurs",cost:{dew:8,pearl:4},multiplier:1.25},
+ {name:"Le plat des origines",cost:{ember:10,dust:6},multiplier:1.5},
+ {name:"Le dessert des 34",cost:{pearl:12,dust:12},multiplier:2}
+] as const;
+export function voyageBuildingMultiplier(p:CookiePlayer,index:number){
+ const b=p.voyages,r=b?.equippedRecipe;let m=r==="nectar"?1.15:r==="menu"?1.25:r==="symphony"?1.2:r==="galette"&&index<10?1.5:r==="constellation"&&index>=10&&index<47?1.35:r==="biscuit"&&index>=47?1.4:1;
+ if(index>=47&&index<50){const mirror=b?.paradoxMode==="mirror";m*=index===48?(mirror?3:1):(mirror?1:2);}
+ if(index>=50&&index<53)m*=1+Math.min(1,Math.min(...[50,51,52].map(i=>p.buildings[i]??0))/50);
+ if(index>=53&&index<56)m*=BANQUET_COURSES[(b?.banquetCourse??0)-1]?.multiplier??1;
+ return m;
+}
+export const voyageManualMultiplier=(p:CookiePlayer)=>p.voyages?.equippedRecipe==="caramel"?1.5:p.voyages?.equippedRecipe==="symphony"?1.3:1;
+function voyageBook(p:CookiePlayer){return p.voyages??(p.voyages={revision:0,cycle:0,inventory:{},recipes:[],relics:[],companions:{}});}
+function requireCompanion(p:CookiePlayer,index:number){if(!Number.isInteger(index)||!COOKIE_AVATARS.some(a=>a.index===index&&p.lifetime>=a.threshold))throw Error("Ce compagnon n’est pas encore débloqué.");}
+function spendIngredients(b:VoyageBook,cost:Partial<Record<IngredientId,number>>){if(Object.entries(cost).some(([id,n])=>(b.inventory[id as IngredientId]??0)<n))throw Error("Il manque des ingrédients. Rapporte-les d’une expédition.");for(const [id,n] of Object.entries(cost))b.inventory[id as IngredientId]=(b.inventory[id as IngredientId]??0)-n;}
+function applyVoyageAction(p:CookiePlayer,a:CookieAction,now:number){
+ if(!["voyageStart","voyageChoice","voyageClaim","voyageCancel","secretCraft","secretEquip","companionEvolve","companionEquip","paradoxSwitch","banquetPrepare"].includes(a.kind))return;
+ const b=voyageBook(p);if("revision" in a&&a.revision!==b.revision)throw Error("Ton carnet de voyage a changé dans un autre onglet. Actualise avant de réessayer.");
+ if(a.kind==="voyageStart"){
+  const d=VOYAGE_DESTINATIONS.find(d=>d.id===a.destination);if(!d||p.lifetime<d.threshold)throw Error("Cette destination attend un prochain horizon.");
+  if(b.active||a.cycle!==b.cycle)throw Error("Une expédition a déjà changé. Actualise le carnet.");
+  if(a.team.length<1||a.team.length>3||new Set(a.team).size!==a.team.length)throw Error("Choisis un à trois compagnons différents.");
+  a.team.forEach(id=>requireCompanion(p,id));const bonus=voyageTeamBonus(p,d,a.team);
+  b.cycle++;b.active={id:b.cycle,destination:d.id,team:[...a.team],startedAt:now,readyAt:now+d.minutes*20000,step:0,cargo:{[d.primary]:4+bonus,[d.secondary]:2},secrets:[],choices:[]};
+ }
+ if(a.kind==="voyageChoice"||a.kind==="voyageClaim"||a.kind==="voyageCancel"){
+  const run=b.active;if(!run||run.id!==a.runId)throw Error("Cette expédition n’est plus active.");const d=VOYAGE_DESTINATIONS.find(d=>d.id===run.destination)!;
+  if(a.kind==="voyageCancel"){delete b.active;b.revision++;return;}
+  if(now<run.readyAt)throw Error("Tes compagnons sont encore en route.");
+  if(a.kind==="voyageChoice"){
+   if(run.step!==a.step||(run.step===0?!["gather","study"].includes(a.choice):!["safe","secret"].includes(a.choice)))throw Error("Cette rencontre a déjà été résolue. Actualise le voyage.");
+   const secret=a.choice==="study"||a.choice==="secret",ingredient=secret?d.secondary:d.primary;
+   run.cargo[ingredient]=(run.cargo[ingredient]??0)+(secret?2:4);if(secret)run.secrets.push(d.id+":"+run.step);
+   run.choices.push(a.choice);run.step=(run.step+1) as 1|2;run.readyAt=now+d.minutes*20000;
+  }else{
+   if(run.step!==2)throw Error("Il reste une rencontre à explorer avant le retour.");
+   if(Object.entries(run.cargo).some(([id,n])=>(b.inventory[id as IngredientId]??0)+n>1e9))throw Error("Le garde-manger est plein. Compose une recette avant de récupérer le voyage.");
+   const newRelics=run.secrets.filter(id=>!b.relics.includes(id)),finds=Object.values(run.cargo).reduce((n,v)=>n+v,0);
+   for(const [id,n] of Object.entries(run.cargo))b.inventory[id as IngredientId]=(b.inventory[id as IngredientId]??0)+n;
+   for(const id of run.team){const r=companionRecord(p,id);b.companions[id]={...r,returns:Math.min(1e9,r.returns+1),finds:Math.min(1e9,r.finds+finds),secrets:Math.min(1e9,r.secrets+run.secrets.length),regions:[...new Set([...r.regions,d.id])]};}
+   b.relics=[...new Set([...b.relics,...run.secrets])];b.last={id:run.id,destination:d.id,team:[...run.team],cargo:{...run.cargo},newRelics};delete b.active;
+  }
+ }
+ if(a.kind==="secretCraft"){
+  const recipe=SECRET_RECIPES.find(r=>r.id===a.recipe);if(!recipe||b.recipes.includes(recipe.id))throw Error("Cette recette est déjà découverte.");spendIngredients(b,recipe.cost);b.recipes.push(recipe.id);if(!b.equippedRecipe)b.equippedRecipe=recipe.id;
+ }
+ if(a.kind==="secretEquip"){if(a.recipe!==null&&!b.recipes.includes(a.recipe))throw Error("Découvre d’abord cette recette.");if(a.recipe===null)delete b.equippedRecipe;else b.equippedRecipe=a.recipe;}
+ if(a.kind==="companionEvolve"){
+  requireCompanion(p,a.companion);if(!companionCanEvolve(p,a.companion,a.stage))throw Error("Ce compagnon doit encore accomplir ses défis personnels.");b.companions[a.companion]={...companionRecord(p,a.companion),stage:a.stage};
+ }
+ if(a.kind==="companionEquip"){if(a.companion===null)delete b.equippedCompanion;else{requireCompanion(p,a.companion);b.equippedCompanion=a.companion;}}
+ if(a.kind==="paradoxSwitch"){
+  if(p.lifetime<1e123)throw Error("Le Royaume des paradoxes n’est pas encore ouvert.");
+  if(now<(b.paradoxChangeAt??0)||a.mode===(b.paradoxMode??"light"))throw Error("L’inversion n’est pas encore prête.");b.paradoxMode=a.mode;b.paradoxChangeAt=now+60000;
+ }
+ if(a.kind==="banquetPrepare"){
+  if(p.lifetime<1e141||a.course!==(b.banquetCourse??0)||!BANQUET_COURSES[a.course])throw Error("Ce service du banquet n’est pas disponible.");spendIngredients(b,BANQUET_COURSES[a.course].cost);b.banquetCourse=a.course+1;
+ }
+ b.revision++;
 }

@@ -70,7 +70,7 @@ function DialogContent({
           onCloseAutoFocus?.(event)
           if (!event.defaultPrevented && opener.current?.isConnected) {
             event.preventDefault()
-            opener.current.focus()
+            opener.current.focus({ preventScroll: true })
           }
         }}
         data-slot="dialog-content"
