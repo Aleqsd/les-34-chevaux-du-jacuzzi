@@ -6,9 +6,25 @@ export const RHYTHM_NOTES=(()=>{
  let beat=0;return Array.from({length:64},(_,i)=>{const [x,y]=paths[Math.floor(i/16)][i%8];const at=Math.round(3000+beat*60000/RHYTHM_BPM);beat+=i<16?1.5:i%8===5||i%8===6?.5:i%8===7?2:1;return {at,x,y};});
 })();
 export const RHYTHM_DURATION=RHYTHM_NOTES[63].at+1000;
-export type RhythmResult={runId:number;accuracy:number;misses:number;combo:number;passed:boolean;at:number;rewarded:boolean};
-export type RhythmBook={cycle:number;active?:{id:number;startedAt:number;rules:1};boostUntil?:number;best?:number;wins?:number;last?:RhythmResult};
-export type RhythmAction={kind:"rhythmStart";cycle:number}|{kind:"rhythmFinish";runId:number;hits:number[];strays:number};
+export const RHYTHM_CHART_IDS=["groove","bubbles","meteors","supernova"] as const;
+export type RhythmChartId=typeof RHYTHM_CHART_IDS[number];
+type RhythmChart={id:RhythmChartId;name:string;level:string;bpm:number;approach:number;description:string;color:string;notes:{at:number;x:number;y:number}[];duration:number;melody:number[]};
+function rhythmPattern(bpm:number,paths:number[][][],beats:number[]){let beat=0;return Array.from({length:64},(_,i)=>{const [x,y]=paths[Math.floor(i/16)%paths.length][i%8];const at=Math.round(3000+beat*60000/bpm);beat+=beats[i%beats.length];return {at,x,y};});}
+const bubbleNotes=rhythmPattern(90,[[[30,38],[43,30],[57,30],[70,38],[70,58],[57,66],[43,66],[30,58]],[[30,50],[40,35],[55,30],[70,40],[70,60],[55,70],[40,65],[30,50]]],[1,1,1,1,1,1,1,2]);
+const meteorNotes=rhythmPattern(145,[[[24,28],[40,42],[58,58],[76,72],[76,48],[58,30],[40,58],[24,72]],[[24,55],[40,30],[56,55],[76,30],[76,68],[56,42],[40,68],[24,42]]],[1,1,.5,.5,1,1,.5,1.5]);
+const novaNotes=rhythmPattern(174,[[[24,30],[44,45],[64,30],[76,50],[64,70],[44,55],[24,70],[40,50]],[[28,28],[70,28],[50,50],[70,72],[28,72],[50,50],[28,50],[70,50]],[[24,38],[44,28],[64,38],[76,60],[56,72],[36,62],[24,48],[52,48]]],[1,.5,.5,1,.5,.5,1,1]);
+export const RHYTHM_CHARTS:RhythmChart[]=[
+ {id:"groove",name:"Jacuzzi Groove",level:"Intermédiaire",bpm:RHYTHM_BPM,approach:RHYTHM_APPROACH,description:"La piste originale : boucles souples et petits contretemps pour trouver ton rythme.",color:"#a9efff",notes:RHYTHM_NOTES,duration:RHYTHM_DURATION,melody:[523.25,659.25,783.99,659.25,587.33,698.46,880,698.46]},
+ {id:"bubbles",name:"Balade des bulles",level:"Découverte",bpm:90,approach:1400,description:"Des cercles rapprochés, une pulsation posée et de grandes respirations pour apprendre à viser.",color:"#8bf0bb",notes:bubbleNotes,duration:bubbleNotes[63].at+1000,melody:[392,493.88,587.33,659.25,587.33,493.88,440,392]},
+ {id:"meteors",name:"Pluie de météores",level:"Difficile",bpm:145,approach:950,description:"Traverse la piste en diagonale et alterne les mains dans des rafales de doubles notes.",color:"#ffd16b",notes:meteorNotes,duration:meteorNotes[63].at+1000,melody:[440,523.25,659.25,880,783.99,659.25,523.25,493.88]},
+ {id:"supernova",name:"Supernova",level:"Expert",bpm:174,approach:800,description:"Des grands sauts, des croisements et des rafales rapides. Vise le full combo de 64 notes.",color:"#e5a1ff",notes:novaNotes,duration:novaNotes[63].at+1000,melody:[369.99,493.88,554.37,739.99,987.77,739.99,659.25,554.37]},
+];
+export const rhythmChart=(id:RhythmChartId="groove")=>RHYTHM_CHARTS.find(c=>c.id===id)??RHYTHM_CHARTS[0];
+export type RhythmResult={runId:number;chart?:RhythmChartId;accuracy:number;misses:number;combo:number;passed:boolean;at:number;rewarded:boolean};
+export type RhythmRecord={best:number;wins:number;combo?:number};
+export type RhythmBook={cycle:number;active?:{id:number;startedAt:number;rules:1|2;chart?:RhythmChartId};boostUntil?:number;best?:number;wins?:number;last?:RhythmResult;records?:Partial<Record<RhythmChartId,RhythmRecord>>};
+export function rhythmRecord(book:RhythmBook|undefined,id:RhythmChartId){return book?.records?.[id]??(!book?.records&&id==="groove"&&(book?.best!==undefined||book?.wins!==undefined)?{best:book.best??0,wins:book.wins??0}:undefined);}
+export type RhythmAction={kind:"rhythmStart";cycle:number;chart?:RhythmChartId}|{kind:"rhythmFinish";runId:number;hits:number[];strays:number};
 export function rhythmScore(hits:number[],strays:number){
  let score=0,misses=0,combo=0,bestCombo=0;
  for(const hit of hits){const delta=Math.abs(hit);if(delta>RHYTHM_WINDOW){misses++;combo=0;}else{score+=delta<=80?100:delta<=145?85:50;bestCombo=Math.max(bestCombo,++combo);}}
@@ -18,21 +34,25 @@ export function rhythmScore(hits:number[],strays:number){
 export const rhythmMultiplier=(p:CookiePlayer,now=Date.now())=>(p.rhythm?.boostUntil??0)>now?1.25:1;
 function applyRhythmAction(p:CookiePlayer,action:CookieAction,now:number){
  if(action.kind==="rhythmStart"){
+  if(action.chart!==undefined&&!RHYTHM_CHART_IDS.includes(action.chart))throw Error("Cette piste n’existe pas.");
   const book=p.rhythm??{cycle:0};if(action.cycle!==book.cycle)throw Error("Une autre partie a démarré. Réessaie.");
-  book.cycle++;book.active={id:book.cycle,startedAt:now,rules:1};p.rhythm=book;
+  book.cycle++;book.active={id:book.cycle,startedAt:now,rules:action.chart?2:1,...(action.chart?{chart:action.chart}:{})};p.rhythm=book;
  }
  if(action.kind==="rhythmFinish"){
   const book=p.rhythm,run=book?.active;
-  if(!book||!run||run.id!==action.runId||run.rules!==1)throw Error("Cette partie n’est plus active. Lance un nouveau défi.");
-  if(now-run.startedAt<RHYTHM_DURATION-300)throw Error("La piste n’est pas encore terminée.");
+  if(!book||!run||run.id!==action.runId||(run.rules!==1&&run.rules!==2)||(run.rules===2&&!RHYTHM_CHART_IDS.includes(run.chart!)))throw Error("Cette partie n’est plus active. Lance un nouveau défi.");
+  const chart=rhythmChart(run.rules===1?"groove":run.chart);
+  if(now-run.startedAt<chart.duration-300)throw Error("La piste n’est pas encore terminée.");
   if(now-run.startedAt>15*60*1000)throw Error("Cette partie a expiré. Relance le défi.");
   if(action.hits.length!==64||!Number.isInteger(action.strays)||action.strays<0||action.strays>1000||action.hits.some(h=>!Number.isInteger(h)||(h!==RHYTHM_MISS&&Math.abs(h)>RHYTHM_WINDOW)))throw Error("Le résultat de cette partie est invalide.");
   // One input cannot hit two notes, including overlapping judgement windows.
-  let previous=-Infinity;for(let i=0;i<64;i++){if(action.hits[i]===RHYTHM_MISS)continue;const at=RHYTHM_NOTES[i].at+action.hits[i];if(at<=previous)throw Error("Ces frappes ne correspondent pas à la piste.");previous=at;}
+  let previous=-Infinity;for(let i=0;i<64;i++){if(action.hits[i]===RHYTHM_MISS)continue;const at=chart.notes[i].at+action.hits[i];if(at<=previous)throw Error("Ces frappes ne correspondent pas à la piste.");previous=at;}
   const result=rhythmScore(action.hits,action.strays),rewarded=result.passed&&(book.boostUntil??0)<=now;
   if(rewarded)book.boostUntil=now+RHYTHM_BOOST_MS;
+  if(!book.records){const original=rhythmRecord(book,"groove");book.records=original?{groove:original}:{};}
+  const record=book.records[chart.id]??{best:0,wins:0};book.records[chart.id]={best:Math.max(record.best,result.accuracy),wins:record.wins+(result.passed?1:0),combo:Math.max(record.combo??0,result.combo)};
   if(result.passed)book.wins=(book.wins??0)+1;
-  book.best=Math.max(book.best??0,result.accuracy);book.last={...result,runId:run.id,at:now,rewarded};delete book.active;
+  book.best=Math.max(book.best??0,result.accuracy);book.last={...result,runId:run.id,chart:chart.id,at:now,rewarded};delete book.active;
  }
 }
 export const BUILDINGS=[
@@ -72,7 +92,17 @@ export const BUILDINGS=[
  {"id":"singularity","name":"Forge de singularités","description":"Toute une galaxie de chocolat dans une seule pépite.","price":5e+79,"cps":1e+42},
  {"id":"firmament","name":"Serre du firmament","description":"Les constellations y mûrissent comme des fruits.","price":4.9999999999999995e+82,"cps":3e+43},
  {"id":"odyssey","name":"Caravane des éternités","description":"Trente-quatre chevaux livrent le goûter à travers les âges.","price":5e+85,"cps":1e+45},
- {"id":"genesis","name":"Grand Four des commencements","description":"Au premier crépitement, un nouvel univers sent le biscuit.","price":5e+88,"cps":3e+46}
+ {"id":"genesis","name":"Grand Four des commencements","description":"Au premier crépitement, un nouvel univers sent le biscuit.","price":5e+88,"cps":3e+46},
+ {"id":"echo","name":"Chambre des échos","description":"Chaque fournée revient avec une recette qu’on n’a pas encore inventée.","price":5e+91,"cps":1e+48},
+ {"id":"tide","name":"Marée de lumière","description":"Les vagues déposent du sucre sur les rivages du possible.","price":5e+94,"cps":3e+49},
+ {"id":"compass","name":"Boussole des ailleurs","description":"Elle indique toujours le prochain goûter.","price":5.000000000000001e+97,"cps":1e+51},
+ {"id":"dreamforge","name":"Atelier des songes éveillés","description":"Le crew ouvre les yeux. Les fours continuent de rêver.","price":5e+100,"cps":3e+52},
+ {"id":"orchard","name":"Verger des lendemains","description":"On cueille aujourd’hui les biscuits de demain.","price":5e+103,"cps":1e+54},
+ {"id":"cathedral","name":"Cathédrale des aurores","description":"Ses vitraux changent chaque rayon en chocolat.","price":5.000000000000001e+106,"cps":3e+55},
+ {"id":"ocean","name":"Océan des éternités","description":"Les fournées voguent d’un commencement à l’autre.","price":5e+109,"cps":1e+57},
+ {"id":"atlas","name":"Atlas des impossibles","description":"Chaque carte dessine un monde où le beurre ne manque jamais.","price":5e+112,"cps":3e+58},
+ {"id":"sanctuary","name":"Sanctuaire des 34","description":"Trente-quatre sabots veillent sur la flamme de tous les mondes.","price":5e+115,"cps":1e+60},
+ {"id":"celebration","name":"Jubilé du jacuzzi","description":"Tous les horizons se retrouvent pour une fournée sans fin.","price":5e+118,"cps":3e+61}
 ] as const;
 export type Upgrade={id:string;name:string;price:number;building?:number;owned?:number;requires?:string;clicks?:number;earned?:number;clickMultiplier?:number;clickTotalMultiplier?:number;share?:number;synergy?:{source:number;target:number;sourceOwned:number};description:string};
 export const UPGRADES:Upgrade[]=[
@@ -91,7 +121,7 @@ export const UPGRADES:Upgrade[]=[
  {id:"pulse",name:"Pulsation pâtissière",price:1e8,earned:1e8,share:.15,requires:"cadence",description:"Ajoute 15 % de ta production par seconde à chaque clic."},
  {id:"resonance",name:"Résonance du jacuzzi",price:1e12,earned:1e12,share:.25,requires:"pulse",description:"Ajoute 25 % de ta production par seconde à chaque clic (75 % avec toutes les recettes)."}
 ];
-export const CHAPTER_THRESHOLDS=[1e14,1e17,1e20,1e22,1e24,1e26,1e30,1e33,1e36,1e39,1e42,1e45,1e48,1e51,1e54,1e57,1e60,1e63,1e66,1e69,1e72,1e75,1e78,1e81,1e84,1e87,1e90] as const;
+export const CHAPTER_THRESHOLDS=[1e14,1e17,1e20,1e22,1e24,1e26,1e30,1e33,1e36,1e39,1e42,1e45,1e48,1e51,1e54,1e57,1e60,1e63,1e66,1e69,1e72,1e75,1e78,1e81,1e84,1e87,1e90,1e93,1e96,1e99,1e102,1e105,1e108,1e111,1e114,1e117,1e120] as const;
 export const buildingUnlock=(index:number)=>index<10?0:CHAPTER_THRESHOLDS[index-10]??Infinity;
 export const buildingUnlocked=(p:CookiePlayer,index:number)=>p.lifetime>=buildingUnlock(index);
 UPGRADES.push(
@@ -116,14 +146,26 @@ UPGRADES.push(
 );
 // The next era is appended after the complete v24 recipe catalog.
 UPGRADES.push(
- ...BUILDINGS.slice(27).flatMap((b,j)=>[
+ ...BUILDINGS.slice(27,37).flatMap((b,j)=>[
   {id:b.id+"_double",name:b.name+" · nouvelle aube",price:b.price*20,building:j+27,owned:10,earned:buildingUnlock(j+27),description:"Double la production de ce bâtiment."},
   {id:b.id+"_master",name:b.name+" · secret des éons",price:b.price*250,building:j+27,owned:25,earned:buildingUnlock(j+27),requires:b.id+"_double",description:"Double encore la production de ce bâtiment."},
   {id:b.id+"_signature",name:b.name+" · premier crépitement",price:b.price*1200,building:j+27,owned:50,earned:buildingUnlock(j+27),requires:b.id+"_master",description:"Double la production après le secret des éons."},
  ]),
- ...BUILDINGS.slice(27).flatMap((b,j)=>[1,2].map((back,k)=>{
+ ...BUILDINGS.slice(27,37).flatMap((b,j)=>[1,2].map((back,k)=>{
   const target=j+27,source=target-back;
   return {id:"link_"+BUILDINGS[source].id+"_"+b.id,name:b.name+(k?" · héritage des éons":" · relais de l’aube"),price:b.price*(k?500:100),earned:buildingUnlock(target),synergy:{source,target,sourceOwned:k?100:50},description:b.name+" : +0,2 % par "+BUILDINGS[source].name+" possédé, jusqu’à +50 %."};
+ }))
+);
+// Append the Jubilee era after every v25 recipe.
+UPGRADES.push(
+ ...BUILDINGS.slice(37).flatMap((b,j)=>[
+  {id:b.id+"_double",name:b.name+" · rivage nouveau",price:b.price*20,building:j+37,owned:10,earned:buildingUnlock(j+37),description:"Double la production de ce bâtiment."},
+  {id:b.id+"_master",name:b.name+" · rêve éveillé",price:b.price*250,building:j+37,owned:25,earned:buildingUnlock(j+37),requires:b.id+"_double",description:"Double encore la production de ce bâtiment."},
+  {id:b.id+"_signature",name:b.name+" · recette du jubilé",price:b.price*1200,building:j+37,owned:50,earned:buildingUnlock(j+37),requires:b.id+"_master",description:"Double la production après le rêve éveillé."},
+ ]),
+ ...BUILDINGS.slice(37).flatMap((b,j)=>[1,2].map((back,k)=>{
+  const target=j+37,source=target-back;
+  return {id:"link_"+BUILDINGS[source].id+"_"+b.id,name:b.name+(k?" · mémoire des ailleurs":" · fil des lendemains"),price:b.price*(k?500:100),earned:buildingUnlock(target),synergy:{source,target,sourceOwned:k?100:50},description:b.name+" : +0,2 % par "+BUILDINGS[source].name+" possédé, jusqu’à +50 %."};
  }))
 );
 export const COSMIC_CHAPTERS=[
@@ -135,6 +177,9 @@ export const COSMIC_CHAPTERS=[
  {name:"Au-delà des origines",from:27,to:30},
  {name:"Symphonie de l’infini",from:30,to:34},
  {name:"Nouvelle aube des 34",from:34,to:37},
+ {name:"Les rivages du possible",from:37,to:40},
+ {name:"Les mondes à inventer",from:40,to:44},
+ {name:"Le jubilé des 34",from:44,to:47},
 ] as const;
 export const COOKIE_AVATARS=[{index:60,name:"Petit Biscuit",threshold:1},{index:61,name:"Donut fraise",threshold:1000},{index:62,name:"Croissant doré",threshold:1e6},{index:63,name:"Cupcake étoilé",threshold:1e9},{index:64,name:"Macaron cosmique",threshold:1e12},{index:65,name:"Roi Cacao",threshold:1e15},
  {index:66,name:"Mochi pêche",threshold:100},{index:67,name:"Chou chantilly",threshold:1e4},{index:68,name:"Gaufre miel",threshold:1e5},{index:69,name:"Pancake fraise",threshold:1e7},{index:70,name:"Éclair chocolat",threshold:1e8},{index:71,name:"Glace pistache",threshold:1e10},{index:72,name:"Bretzel caramel",threshold:1e11},{index:73,name:"Renard pâtissier",threshold:1e13},{index:74,name:"Chat barista",threshold:1e14},{index:75,name:"Dragon flambé",threshold:1e16},{index:76,name:"Licorne bonbon",threshold:1e17},{index:77,name:"Cheval stellaire",threshold:1e18},
@@ -149,7 +194,55 @@ export const COOKIE_AVATARS=[{index:60,name:"Petit Biscuit",threshold:1},{index:
  {"index":86,"name":"Gardien du vide","threshold":1e+63},
  {"index":87,"name":"Dragon du zénith","threshold":1e+72},
  {"index":88,"name":"Cheval de l’éternité","threshold":1e+81},
- {"index":89,"name":"Empereur du goûter","threshold":1e+90}];
+ {"index":89,"name":"Empereur du goûter","threshold":1e+90},
+ {"index":90,"name":"Lapin des portails","threshold":1e+33},
+ {"index":91,"name":"Panda nova","threshold":1e+39},
+ {"index":92,"name":"Loutre lunaire","threshold":1e+45},
+ {"index":93,"name":"Tortue des nébuleuses","threshold":1e+51},
+ {"index":94,"name":"Hippocampe cristal","threshold":1e+57},
+ {"index":95,"name":"Papillon des rêves","threshold":1e+60},
+ {"index":96,"name":"Griffon des aurores","threshold":1e+66},
+ {"index":97,"name":"Kraken confiseur","threshold":1e+75},
+ {"index":98,"name":"Lynx du firmament","threshold":1e+84},
+ {"index":99,"name":"Qilin céleste","threshold":1e+96},
+ {"index":100,"name":"Phénix primordial","threshold":1e+108},
+ {"index":101,"name":"Souverain des 34","threshold":1e+120},
+ {"index":102,"name":"Pingouin astronaute","threshold":10000000000000000000},
+ {"index":103,"name":"Dauphin caramel","threshold":100000000000000000000},
+ {"index":104,"name":"Raie des aurores","threshold":1e+22},
+ {"index":105,"name":"Pieuvre praline","threshold":1e+23},
+ {"index":106,"name":"Phoque polaire","threshold":1e+25},
+ {"index":107,"name":"Méduse stellaire","threshold":1e+26},
+ {"index":108,"name":"Crabe rubis","threshold":1e+28},
+ {"index":109,"name":"Narval sorbet","threshold":1e+29},
+ {"index":110,"name":"Poisson-lune biscuit","threshold":1e+31},
+ {"index":111,"name":"Manchot empereur","threshold":1e+32},
+ {"index":112,"name":"Tortue opaline","threshold":1e+34},
+ {"index":113,"name":"Léviathan bonbon","threshold":1e+35},
+ {"index":114,"name":"Écureuil noisette","threshold":1e+37},
+ {"index":115,"name":"Hérisson truffe","threshold":1e+38},
+ {"index":116,"name":"Raton des étoiles","threshold":1e+40},
+ {"index":117,"name":"Koala nuage","threshold":1e+41},
+ {"index":118,"name":"Cerf caramel","threshold":1e+43},
+ {"index":119,"name":"Loup boréal","threshold":1e+44},
+ {"index":120,"name":"Panda roux solaire","threshold":1e+46},
+ {"index":121,"name":"Chouette opaline","threshold":1e+47},
+ {"index":122,"name":"Lapin des rêves","threshold":1e+49},
+ {"index":123,"name":"Renard arc-en-ciel","threshold":1e+50},
+ {"index":124,"name":"Ours gardien","threshold":1e+52},
+ {"index":125,"name":"Licorne sylvestre","threshold":1e+53},
+ {"index":126,"name":"Mochi lunaire","threshold":1e+55},
+ {"index":127,"name":"Éclair foudre","threshold":1e+56},
+ {"index":128,"name":"Donut galaxie","threshold":1e+58},
+ {"index":129,"name":"Macaron aurore","threshold":1e+59},
+ {"index":130,"name":"Gaufre cristal","threshold":1e+62},
+ {"index":131,"name":"Cupcake royal","threshold":1e+68},
+ {"index":132,"name":"Croissant phénix","threshold":1e+78},
+ {"index":133,"name":"Flan des éons","threshold":1e+88},
+ {"index":134,"name":"Profiterole solaire","threshold":1e+99},
+ {"index":135,"name":"Millefeuille astral","threshold":1e+105},
+ {"index":136,"name":"Tarte constellation","threshold":1e+114},
+ {"index":137,"name":"Gâteau des univers","threshold":1e+117}];
 export const latestCookieAvatar=(lifetime:number)=>COOKIE_AVATARS.reduce((best,a)=>a.threshold<=lifetime&&a.threshold>best.threshold?a:best,COOKIE_AVATARS[0]);
 export type Specialization="architect"|"artisan"|"watcher";
 export type ContractKind="produce"|"spend"|"catch";
@@ -249,14 +342,24 @@ COOKIE_ACHIEVEMENTS.push(
 );
 // Permanent records and rewards for the era after the Banquet des origines.
 COOKIE_MISSIONS.push(
- ...BUILDINGS.slice(27).map((b,i)=>({id:"dawn_m"+i,name:b.name+" · nouvel horizon",metric:"lifetime" as const,target:buildingUnlock(i+27),reward:buildingUnlock(i+27)*.001})),
- ...BUILDINGS.slice(27).map((b,i)=>({id:"dawn_build"+i,name:(i+28)+" ateliers, une nouvelle aube",metric:"buildingKinds" as const,target:i+28,reward:b.price*.1}))
+ ...BUILDINGS.slice(27,37).map((b,i)=>({id:"dawn_m"+i,name:b.name+" · nouvel horizon",metric:"lifetime" as const,target:buildingUnlock(i+27),reward:buildingUnlock(i+27)*.001})),
+ ...BUILDINGS.slice(27,37).map((b,i)=>({id:"dawn_build"+i,name:(i+28)+" ateliers, une nouvelle aube",metric:"buildingKinds" as const,target:i+28,reward:b.price*.1}))
 );
 COOKIE_ACHIEVEMENTS.push(
- ...BUILDINGS.slice(27).map((b,i)=>({id:"dawn_bake"+i,name:["Un ruban d’aurore","Le biscuit sans fin","Le poids des étoiles","Les rêves prennent vie","De l’autre côté du visible","La musique du silence","Une pépite contient le monde","Le firmament en fleurs","Le goûter traverse les âges","Le premier crépitement"][i],metric:"lifetime" as const,target:buildingUnlock(i+27)})),
- ...BUILDINGS.slice(27).map((b,i)=>({id:"dawn_kind"+i,name:(i+28)+" saveurs d’éternité",metric:"buildingKinds" as const,target:i+28})),
+ ...BUILDINGS.slice(27,37).map((b,i)=>({id:"dawn_bake"+i,name:["Un ruban d’aurore","Le biscuit sans fin","Le poids des étoiles","Les rêves prennent vie","De l’autre côté du visible","La musique du silence","Une pépite contient le monde","Le firmament en fleurs","Le goûter traverse les âges","Le premier crépitement"][i],metric:"lifetime" as const,target:buildingUnlock(i+27)})),
+ ...BUILDINGS.slice(27,37).map((b,i)=>({id:"dawn_kind"+i,name:(i+28)+" saveurs d’éternité",metric:"buildingKinds" as const,target:i+28})),
  ...[135,145,155,165,175].map((target,i)=>({id:"dawn_recipe"+i,name:["Le carnet des aurores","Le savoir des songes","Chef de l’invisible","Le festin des éons","Toutes les recettes de l’aube"][i],metric:"recipes" as const,target})),
  ...[1e60,1e75].map((target,i)=>({id:"dawn_flow"+i,name:["Le souffle des éternités","L’univers tourne au four"][i],metric:"production" as const,target}))
+);
+COOKIE_MISSIONS.push(
+ ...BUILDINGS.slice(37).map((b,i)=>({id:"jubilee_m"+i,name:b.name+" · nouvel ailleurs",metric:"lifetime" as const,target:buildingUnlock(i+37),reward:buildingUnlock(i+37)*.001})),
+ ...BUILDINGS.slice(37).map((b,i)=>({id:"jubilee_build"+i,name:(i+38)+" ateliers pour le jubilé",metric:"buildingKinds" as const,target:i+38,reward:b.price*.1}))
+);
+COOKIE_ACHIEVEMENTS.push(
+ ...BUILDINGS.slice(37).map((b,i)=>({id:"jubilee_bake"+i,name:["L’écho du premier biscuit","Une marée de lumière","La direction du goûter","Les yeux ouverts sur l’infini","La récolte des lendemains","Le vitrail de chocolat","D’une éternité à l’autre","Cartographier l’impossible","La flamme des 34","Le jubilé sans fin"][i],metric:"lifetime" as const,target:buildingUnlock(i+37)})),
+ ...BUILDINGS.slice(37).map((b,i)=>({id:"jubilee_kind"+i,name:(i+38)+" saveurs d’ailleurs",metric:"buildingKinds" as const,target:i+38})),
+ ...[185,195,205,215,225].map((target,i)=>({id:"jubilee_recipe"+i,name:["Le carnet des échos","Les recettes des lendemains","Chef des aurores","Le festin des ailleurs","La table du jubilé"][i],metric:"recipes" as const,target})),
+ ...[1e90,1e105].map((target,i)=>({id:"jubilee_flow"+i,name:["La houle des mondes","Le souffle du jubilé"][i],metric:"production" as const,target}))
 );
 export const METRIC_LABELS:Record<Metric,string>={lifetime:"cookies produits",clicks:"clics",maxBuildings:"bâtiments possédés",prestige:"étoiles de prestige",goldenClicks:"cookies dorés récoltés",recipes:"recettes maîtrisées",buildingKinds:"types de bâtiments réunis",production:"cookies / s atteints (hors bonus)",contracts:"contrats terminés",contractKinds:"contrats de chaque type",contractSchools:"contrats dans chaque école"};
 export function formatCookies(n:number){if(n>=1e15)return n.toExponential(2).replace(".",",");if(n>=1e12)return (n/1e12).toLocaleString("fr-FR",{maximumFractionDigits:2})+" T";if(n>=1e9)return (n/1e9).toLocaleString("fr-FR",{maximumFractionDigits:2})+" Md";if(n>=1e6)return (n/1e6).toLocaleString("fr-FR",{maximumFractionDigits:2})+" M";return n.toLocaleString("fr-FR",{maximumFractionDigits:n<10?1:0});}
@@ -293,7 +396,7 @@ export const prestigeGain=(p:CookiePlayer)=>Math.max(0,Math.floor(Math.sqrt((p.b
 export function cookieMetric(p:CookiePlayer,metric:Metric){if(metric==="contracts")return p.contracts?.completed??0;if(metric==="contractKinds")return Math.min(...CONTRACT_KINDS.map(k=>p.contracts?.byKind[k]??0));if(metric==="contractSchools")return Math.min(...SPECIALIZATIONS.map(s=>p.contracts?.bySchool[s.id]??0));if(metric==="recipes")return Math.max(p.maxRecipes??0,p.upgrades.length);if(metric==="buildingKinds")return Math.max(p.maxBuildingKinds??0,p.buildings.filter(n=>n>0).length);if(metric==="production")return Math.max(p.maxProduction??0,baseProduction(p));return p[metric];}
 export function award(p:CookiePlayer){p.maxRecipes=cookieMetric(p,"recipes");p.maxBuildingKinds=cookieMetric(p,"buildingKinds");p.maxProduction=cookieMetric(p,"production");p.maxBuildings=Math.max(p.maxBuildings,p.buildings.reduce((a,b)=>a+b,0));p.achievements=[...new Set([...p.achievements,...COOKIE_ACHIEVEMENTS.filter(a=>cookieMetric(p,a.metric)>=a.target).map(a=>a.id)])];}
 // Finite storage guard, far beyond the playable chapters (through 1e60).
-export const COOKIE_CAP=1e120;
+export const COOKIE_CAP=1e150;
 const CAP=COOKIE_CAP;
 export const REBUILD_MISSIONS=[
  {id:"r1",name:"Rallumer les fours",metric:"buildings",target:5,reward:500},

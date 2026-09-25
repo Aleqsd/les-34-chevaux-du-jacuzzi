@@ -1,0 +1,36 @@
+Built-in imagegen; reference: public/cookie-avatars-v25.webp
+
+Initial generation prompt:
+Use case: stylized-concept
+Asset type: one production game avatar sprite sheet, twelve distinct collectible edible cosmic chibi figurines, all in ONE illustration.
+Reference role: the supplied cookie-avatars-v25.webp is STYLE REFERENCE ONLY: match its premium polished cute dimensional sculpted pastry characters, huge glossy expressive eyes, baked biscuit / icing / chocolate / sugar textures, magical stars, rich color, soft studio lighting and deep dark navy background. Create the twelve NEW subjects below, do not copy reference species.
+Layout is critical: exact 4 COLUMNS by 3 ROWS, uniformly sized SQUARE cells. Final image aspect ratio exactly 4:3, requested size 1536 x 1152. Invisible grid: NO grid lines, borders, dividers, circles, labels, text or watermark. Same continuous flat deep navy background in every cell. Each character strictly stays inside its own square. Consistent medium full-body camera framing. Center each full character at the center of its square with generous safe padding; every ear, horn, wing, candy and crown lies inside a centered imaginary circular crop of diameter 86% of cell width. This circle is a framing guide only, never draw it. No overlapping or touching adjacent characters. Small controlled star sparkles near each character are permitted, keep background uncluttered.
+Order is mandatory, left to right then top to bottom:
+ROW 1 CELL 1: Lapin des portails — adorable violet bunny made of lavender pastry and frosting, holding a tiny glowing ring-shaped pastry portal, long rounded ears kept within padding.
+ROW 1 CELL 2: Panda nova — adorable blue and white panda with rounded biscuit body, star cookies held between paws, blue cosmic icing accents.
+ROW 1 CELL 3: Loutre lunaire — adorable silvery otter holding a crescent-moon pastry, soft pearlescent icing and little whiskers.
+ROW 1 CELL 4: Tortue des nébuleuses — adorable emerald turtle with a luminous deep galaxy shell decorated with delicate edible stars.
+ROW 2 CELL 1: Hippocampe cristal — adorable cyan crystal seahorse, curled tail, faceted translucent sugar body and frosted belly.
+ROW 2 CELL 2: Papillon des rêves — adorable pink and gold butterfly fairy made of pastry, big symmetrical compact sugar wings, sweet face, tiny gold accents.
+ROW 2 CELL 3: Griffon des aurores — adorable gold and turquoise griffin, bird beak and small wings with lion-like paws and body, golden biscuit and turquoise frosting.
+ROW 2 CELL 4: Kraken confiseur — friendly purple octopus confectioner, rounded body and eight cute short curling tentacles, holding colorful little candies.
+ROW 3 CELL 1: Lynx du firmament — adorable white lynx with tufted ears, sapphire star accents, fluffy icing fur and blue details.
+ROW 3 CELL 2: Qilin céleste — adorable teal and gold mythical deer-dragon qilin, small gold antlers, little golden scales and hooves, elegant teal pastry body.
+ROW 3 CELL 3: Phénix primordial — adorable iridescent blue and white phoenix, luminous sugar feathers, compact gently open wings, graceful small tail kept inside circular safe area.
+ROW 3 CELL 4: Souverain des 34 — royal cosmic BISCUIT HORSE, unmistakable cute horse head with muzzle and short mane, gold baked biscuit body, celestial icing accents, ornate radiant SUN CROWN and compact royal cape. The crown has a sun motif, with NO numbers or text.
+Lighting/mood: delightful magical luxury game collectible figurines, soft front light with luminous frosting highlights, refined three-dimensional illustration, all characters equally polished and equally important.
+Constraints: exactly twelve subjects, exactly 4x3 equal square cells, correct ordered species, no text anywhere, no visible cell boundaries, no props bleeding across cells, no cut-off body parts, no rectangular tiles or interface, no duplication.
+
+Final framing correction prompt:
+Use case: style-transfer.
+Edit this existing twelve-avatar sprite sheet. Preserve all twelve existing subjects, their order, species, colors, faces, decorative details and polished edible cosmic figurine style. Preserve the continuous flat navy background and lack of text.
+Change ONLY character scale and placement to fix exact sprite layout and circle-safe padding.
+Canvas aspect ratio exactly 4:3. Exactly four equal columns and three equal rows of SQUARE cells, invisible grid.
+Each entire avatar including crown, ears, horns, wings, tail and props MUST FIT INSIDE A CENTERED INVISIBLE CIRCLE with diameter 76% of its cell width. This is critical: make each existing avatar noticeably smaller, with generous empty navy padding around it. Small sparkles may surround but never cross cell edges. No part of any character can extend into another cell.
+Exact center positions as percent of total image: columns at x=12.5%,37.5%,62.5%,87.5%; rows at y=16.667%,50%,83.333%. Center each avatar's visible bounding box at those coordinates. All 12 must have comparable visual scale, approx 68% to 74% of one cell width, allowing full silhouette to fit in each circular crop.
+Maintain exact row-major order:
+row1 violet portal bunny, blue-white star-cookie panda, silver crescent otter, emerald galaxy-shell turtle;
+row2 cyan crystal seahorse, pink-gold butterfly fairy, gold-turquoise griffin, purple candy octopus;
+row3 white sapphire-star lynx, teal-gold deer-dragon qilin, iridescent blue-white phoenix, royal cosmic biscuit horse with sun crown.
+Do not draw circles or grid lines. No borders, no labels, no text, no watermark. Keep all bodies complete with no cut-off appendages. Request dimensions 1536 x 1152.
+

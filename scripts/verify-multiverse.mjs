@@ -16,10 +16,10 @@ async function read(){const r=await fetch(base+'/api/cookie?author='+encodeURICo
 function seed(patch){const p={...g.freshCookiePlayer(Date.now()+60000),...patch};db('UPDATE cookie_players SET data='+quote(JSON.stringify(p))+',updated='+p.updated+',version=version+1,last_action=\'\' WHERE author_key='+quote(key));return p;}
 function finite(value){if(typeof value==='number')return Number.isFinite(value);if(value&&typeof value==='object')return Object.values(value).every(finite);return true;}
 try{
- check('37 buildings,175 recipes,78 missions,135 achievements',g.BUILDINGS.length===37&&g.UPGRADES.length===175&&g.COOKIE_MISSIONS.length===78&&g.COOKIE_ACHIEVEMENTS.length===135);
+ check('47 buildings,225 recipes,98 missions,162 achievements',g.BUILDINGS.length===47&&g.UPGRADES.length===225&&g.COOKIE_MISSIONS.length===98&&g.COOKIE_ACHIEVEMENTS.length===162);
  for(const catalogue of [g.BUILDINGS,g.UPGRADES,g.COOKIE_MISSIONS,g.COOKIE_ACHIEVEMENTS])check('catalogue unique IDs within API limit',new Set(catalogue.map(x=>x.id)).size===catalogue.length&&catalogue.every(x=>x.id.length<=40));
  for(let i=16;i<g.BUILDINGS.length;i++){
-  const p={...g.freshCookiePlayer(1000),balance:1e100,lifetime:g.buildingUnlock(i),buildings:g.BUILDINGS.map((_,j)=>j<=i&&j>=i-2?100:0)};
+  const p={...g.freshCookiePlayer(1000),balance:g.COOKIE_CAP,lifetime:g.buildingUnlock(i),buildings:g.BUILDINGS.map((_,j)=>j<=i&&j>=i-2?100:0)};
   for(const u of g.UPGRADES.filter(u=>u.building===i||u.synergy?.target===i)){check('new recipe ready '+u.id,g.upgradeReady(p,u));g.applyCookieAction(p,{kind:'upgrade',upgrade:u.id},1000);check('new recipe purchased '+u.id,p.upgrades.includes(u.id));}
   const before=g.baseProduction(p);g.applyCookieAction(p,{kind:'buy',building:i,quantity:1},1000);check('new building productive '+i,g.baseProduction(p)>before&&finite(p));
  }
@@ -35,8 +35,8 @@ try{
  const cost=g.buildingPrice({...g.freshCookiePlayer(1000)},16,10);p=await read();check('retry UUID purchases new building exactly once',results.every(r=>r.player.buildings[16]===10)&&p.buildings[16]===10&&near(p.balance,1e34-cost));
  await req({kind:'upgrade',upgrade:'antimatter_double'});p=await read();check('new recipe persists',p.upgrades.includes('antimatter_double'));
  const beforeMission=p.balance;await req({kind:'mission',mission:'multiverse_m0'});p=await read();check('postcap mission claimed once',p.missions.includes('multiverse_m0')&&p.balance>beforeMission);await req({kind:'mission',mission:'multiverse_m0'},undefined,400);
- seed({balance:1e119,lifetime:1e120,runEarned:1e120,buildings:g.BUILDINGS.map((_,i)=>i===36?1:0)});
- p=(await req({kind:'buy',building:36,quantity:1})).player;check('last building purchasable and finite',p.buildings[36]===2&&finite(p));
+ seed({balance:g.COOKIE_CAP/10,lifetime:g.COOKIE_CAP,runEarned:g.COOKIE_CAP,buildings:g.BUILDINGS.map((_,i)=>i===46?1:0)});
+ p=(await req({kind:'buy',building:46,quantity:1})).player;check('last building purchasable and finite',p.buildings[46]===2&&finite(p));
  p=(await req({kind:'prestige'})).player;const stars=p.prestige;p=await read();check('huge prestige persists without nonfinite data',stars>1e50&&p.prestige===stars&&p.lifetime===g.COOKIE_CAP&&finite(p));
  seed({balance:1e32,lifetime:1e30,buildings:g.BUILDINGS.map(()=>0)});await req({kind:'buy',building:17,quantity:1},undefined,400);await req({kind:'buy',building:g.BUILDINGS.length,quantity:1},undefined,400);
 }catch(error){issues.push({error:String(error),stack:error.stack});}

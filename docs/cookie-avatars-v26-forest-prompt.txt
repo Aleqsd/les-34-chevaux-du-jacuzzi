@@ -1,0 +1,22 @@
+Built-in imagegen; layout and style reference: C:/Users/aleqs/.codex/generated_art/cookie-avatars-v26.webp
+
+Use case: stylized-concept.
+Asset type: ONE game avatar sprite sheet illustration with twelve distinct collectible characters.
+REFERENCE ROLE: supplied image is a strict STYLE AND GRID LAYOUT reference. Preserve its exact uniformly spaced 4-column by 3-row layout, character scale, deep navy background, generous empty padding, and premium polished 3D edible cosmic chibi style. Replace its twelve subjects with the twelve NEW subjects listed below. Do not reuse subjects from reference.
+CANVAS: exact 4:3 aspect ratio, requested 1536 x 1152, divided into 4 equal columns and 3 equal rows of SQUARE cells. Invisible grid: NO lines, borders, labels, circles, text or watermark.
+CRITICAL CROP SAFETY: Character bounding-box center precisely at each cell center. Total full-body subject height no more than 68% of its square cell. Every appendage and prop must fit within a centered imaginary circle of diameter 80% of cell size. Keep generous empty solid navy space above, below, left and right of every character. No stray art from neighboring cell. Row centers at 16.667%,50%,83.333% of total height. Column centers at 12.5%,37.5%,62.5%,87.5% of total width. Do not compress rows upward. First, middle and last row have exactly equal spacing.
+STYLE: cute high-quality dimensional edible pastry figurines, big glossy expressive eyes, fine baked biscuit / icing / chocolate / sugar textures, refined details, soft studio lighting and luminous highlights, magical small stars. Same visual polish on all twelve. Continuous flat deep navy backdrop RGB(12,30,44). No visible platform or individual tiles.
+SUBJECT ORDER is mandatory, row-major left to right then top to bottom:
+Row 1, column 1: Écureuil noisette — adorable hazelnut squirrel with a curled praline tail holding a hazelnut cookie.
+Row 1, column 2: Hérisson truffe — adorable little chocolate truffle hedgehog with cocoa and icing spines.
+Row 1, column 3: Raton des étoiles — adorable gray raccoon with navy cosmic icing mask and star cookies.
+Row 1, column 4: Koala nuage — adorable cloud-white and pale blue koala made of soft marshmallow.
+Row 2, column 1: Cerf caramel — adorable golden caramel deer with small rounded caramel antlers.
+Row 2, column 2: Loup boréal — adorable white and ice-blue wolf cub, aurora frosting and luminous eyes.
+Row 2, column 3: Panda roux solaire — adorable red panda in amber and cream biscuit colors with small sun-shaped sugar decorations.
+Row 2, column 4: Chouette opaline — adorable opal owl, pearly white pastry feathers and pastel star decorations.
+Row 3, column 1: Lapin des rêves — adorable pastel pink and lilac bunny with rounded ears and tiny dream-cloud sugar accents.
+Row 3, column 2: Renard arc-en-ciel — adorable rainbow fox, cream biscuit body and smoothly flowing rainbow frosting tail.
+Row 3, column 3: Ours gardien — adorable broad friendly bear guardian made of golden pastry with teal icing ornaments and a small star shield.
+Row 3, column 4: Licorne sylvestre — adorable woodland unicorn made of white biscuit, moss-green and gold frosting mane, little leaf-shaped sugar accents.
+CONSTRAINTS: exactly 12 complete isolated characters in exact requested order, one per equally sized square cell. Cheerful and approachable. Entire silhouette visible. No text anywhere, no numbers, no logo, no UI, no border, no visible circle guides. Do not make subjects large; useful negative space is required.

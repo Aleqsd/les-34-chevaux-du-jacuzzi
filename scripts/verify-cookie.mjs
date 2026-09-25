@@ -146,7 +146,7 @@ try{
  const previousGame=previousModule.exports;
  check("old avatar IDs names and thresholds retained",JSON.stringify(game.COOKIE_AVATARS.slice(0,previousGame.COOKIE_AVATARS.length))===JSON.stringify(previousGame.COOKIE_AVATARS));
  check("buildings recipes missions and achievements retained",["BUILDINGS","UPGRADES","COOKIE_MISSIONS","COOKIE_ACHIEVEMENTS"].every(k=>JSON.stringify(game[k].slice(0,previousGame[k].length))===JSON.stringify(previousGame[k])));
- check("avatar IDs remain contiguous and unique",game.COOKIE_AVATARS.length===30&&game.COOKIE_AVATARS.every((a,i)=>a.index===60+i));
+ check("avatar IDs remain contiguous and unique",game.COOKIE_AVATARS.length===78&&game.COOKIE_AVATARS.every((a,i)=>a.index===60+i));
  check("mascot follows threshold rather than avatar index",[[0,60],[99,60],[100,66],[999,66],[1000,61],[999999,68],[1e6,62],[1e9,63],[1e15,65],[1e18,77]].every(([n,i])=>game.latestCookieAvatar(n).index===i));
  for(const avatar of game.COOKIE_AVATARS.slice(6)){seed({lifetime:avatar.threshold-Math.max(1,avatar.threshold*Number.EPSILON*2)});await profile(avatar.index,"none",400);seed({lifetime:avatar.threshold});await profile(avatar.index);}
  await profile(60+game.COOKIE_AVATARS.length,"none",400);
@@ -161,7 +161,7 @@ try{
  eventAt=pickAt(5);seed({nextEventAt:eventAt});r=await action({kind:"event",eventAt});check("rain grants250 minimum",r.eventReward===250&&r.player.balance===250,r);
  const rainPlayer=game.freshCookiePlayer(1000);rainPlayer.buildings[1]=100;check("rain scales to120s base production",game.cookieEventReward(rainPlayer,5000)===12000);
 
- check("expanded catalog sizes and unique identifiers",game.UPGRADES.length===175&&game.COOKIE_MISSIONS.length===78&&game.COOKIE_ACHIEVEMENTS.length===135&&["UPGRADES","COOKIE_MISSIONS","COOKIE_ACHIEVEMENTS"].every(k=>new Set(game[k].map(x=>x.id)).size===game[k].length));
+ check("expanded catalog sizes and unique identifiers",game.UPGRADES.length===225&&game.COOKIE_MISSIONS.length===98&&game.COOKIE_ACHIEVEMENTS.length===162&&["UPGRADES","COOKIE_MISSIONS","COOKIE_ACHIEVEMENTS"].every(k=>new Set(game[k].map(x=>x.id)).size===game[k].length));
  seed({});await action({kind:"mission",mission:"m13"},uuid(),400);await action({kind:"mission",mission:"m15"},uuid(),400);
  seed({buildings:[1,1,1,0,0,0,0,0,0,0],updated:Date.now()+60000});r=await action({kind:"mission",mission:"m13"});check("diversity mission evaluates derived metric and grants500",r.player.missions.includes("m13")&&r.player.balance===500,r);
  seed({upgrades:["thumb","hooves","rhythm"],updated:Date.now()+60000});r=await action({kind:"mission",mission:"m15"});check("recipe mission evaluates derived metric",r.player.missions.includes("m15")&&r.player.balance===500,r);

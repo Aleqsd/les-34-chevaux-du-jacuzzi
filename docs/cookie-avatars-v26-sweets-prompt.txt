@@ -1,0 +1,22 @@
+Built-in imagegen; layout and style reference: C:/Users/aleqs/.codex/generated_art/cookie-avatars-v26.webp
+
+Use case: stylized-concept.
+Asset type: ONE game avatar sprite sheet illustration with twelve distinct collectible characters.
+REFERENCE ROLE: supplied image is a strict STYLE AND GRID LAYOUT reference. Preserve its exact uniformly spaced 4-column by 3-row layout, character scale, deep navy background, generous empty padding, and premium polished 3D edible cosmic chibi style. Replace its twelve subjects with the twelve NEW subjects listed below. Do not reuse subjects from reference.
+CANVAS: exact 4:3 aspect ratio, requested 1536 x 1152, divided into 4 equal columns and 3 equal rows of SQUARE cells. Invisible grid: NO lines, borders, labels, circles, text or watermark.
+CRITICAL CROP SAFETY: Character bounding-box center precisely at each cell center. Total full-body subject height no more than 68% of its square cell. Every appendage and prop must fit within a centered imaginary circle of diameter 80% of cell size. Keep generous empty solid navy space above, below, left and right of every character. No stray art from neighboring cell. Row centers at 16.667%,50%,83.333% of total height. Column centers at 12.5%,37.5%,62.5%,87.5% of total width. Do not compress rows upward. First, middle and last row have exactly equal spacing.
+STYLE: cute high-quality dimensional edible pastry figurines, big glossy expressive eyes, fine baked biscuit / icing / chocolate / sugar textures, refined details, soft studio lighting and luminous highlights, magical small stars. Same visual polish on all twelve. Continuous flat deep navy backdrop RGB(12,30,44). No visible platform or individual tiles.
+SUBJECT ORDER is mandatory, row-major left to right then top to bottom:
+Row 1, column 1: Mochi lunaire — adorable round cream mochi character with tiny arms and feet, crescent-moon sugar ornament.
+Row 1, column 2: Éclair foudre — adorable chocolate éclair character, golden lightning icing motif, tiny arms and feet.
+Row 1, column 3: Donut galaxie — adorable upright donut character with glossy deep purple galaxy frosting and colorful star sprinkles, sweet face and little feet.
+Row 1, column 4: Macaron aurore — adorable pastel rainbow macaron character with aurora colors, cream filling, sweet face and tiny feet.
+Row 2, column 1: Gaufre cristal — adorable golden waffle character with translucent cyan sugar crystals, sweet face and tiny arms and feet.
+Row 2, column 2: Cupcake royal — adorable regal cupcake character with purple wrapper, cream frosting and small golden crown.
+Row 2, column 3: Croissant phénix — adorable golden croissant character with small glowing sugar phoenix wings and warm pink-orange icing.
+Row 2, column 4: Flan des éons — adorable caramel flan character with a polished golden caramel cap, tiny celestial swirls and sweet face.
+Row 3, column 1: Profiterole solaire — adorable round profiterole character filled with cream, chocolate glaze and gold sun-ray sugar details.
+Row 3, column 2: Millefeuille astral — adorable layered millefeuille pastry character with cream and navy astral icing, tiny face and arms and feet.
+Row 3, column 3: Tarte constellation — adorable little berry tart character with purple filling and constellation sugar stars, tiny face and feet.
+Row 3, column 4: Gâteau des univers — adorable majestic regal multi-tier cake CHARACTER with one sweet expressive face, navy cosmic frosting, gold and purple decorations, sun-and-star crown; compact full silhouette.
+CONSTRAINTS: exactly 12 complete isolated characters in exact requested order, one per equally sized square cell. Cheerful and approachable. Entire silhouette visible. No text anywhere, no numbers, no logo, no UI, no border, no visible circle guides. Do not make subjects large; useful negative space is required.

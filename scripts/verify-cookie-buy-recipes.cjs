@@ -76,8 +76,8 @@ check("bad preview budgets produce an empty plan", () => {
   for (const budget of [0, -1, NaN, Infinity, -Infinity]) assert.equal(g.recipePurchasePlan(spoon(22050), budget).recipes.length, 0);
 });
 check("real action schema requires a finite positive bounded maxCost", () => {
-  for (const maxCost of [1, 50, 22050, 1e120]) assert(schema.safeParse({ kind: "buyRecipes", run: 0, maxCost }).success);
-  for (const maxCost of [undefined, 0, -1, NaN, Infinity, 1e121, "50"]) assert(!schema.safeParse({ kind: "buyRecipes", run: 0, maxCost }).success);
+  for (const maxCost of [1, 50, 22050, 1e120, g.COOKIE_CAP]) assert(schema.safeParse({ kind: "buyRecipes", run: 0, maxCost }).success);
+  for (const maxCost of [undefined, 0, -1, NaN, Infinity, g.COOKIE_CAP*10, "50"]) assert(!schema.safeParse({ kind: "buyRecipes", run: 0, maxCost }).success);
 });
 
 function onlyMissing(id, overrides = {}) {
@@ -132,7 +132,7 @@ check("bulk purchase matches individual purchases at the same server time", () =
   assert.equal(json(bulk), json(singles));
 });
 check("all endgame recipes terminate, stay unique and award the final collection", () => {
-  const p = fresh({ balance: 1e120, lifetime: 1e120, clicks: 1000000 }); p.buildings.fill(1000);
+  const p = fresh({ balance: g.COOKIE_CAP, lifetime: g.COOKIE_CAP, clicks: 1000000 }); p.buildings.fill(1000);
   const plan = g.recipePurchasePlan(p), originalOrder = g.UPGRADES.map(u => u.id);
   assert.equal(plan.recipes.length, g.UPGRADES.length); assert(Number.isFinite(plan.cost) && plan.cost <= p.balance);
   for (let i = 1; i < plan.recipes.length; i++) {

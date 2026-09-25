@@ -13,6 +13,10 @@ export const AVATAR_NAMES=["Cheval","Chat","Renard","Panda","Axolotl","Lapin","L
 export function avatarIndex(name:string,profiles:Profile[]){const index=profiles.find(p=>p.authorKey===voterKey(name))?.avatar??Math.max(0,CREW.findIndex(n=>voterKey(n)===voterKey(name)));return index>=0&&index<AVATAR_NAMES.length?index:0;}
 export function lookFor(name:string,profiles:Profile[]):Look{const p=profiles.find(p=>p.authorKey===voterKey(name));return {hat:p?.hat||"none",eyewear:p?.eyewear||"none",floatie:p?.floatie??0,accessory:p?.accessory||(p?.floatie?"floatie":"none"),animated:p?.animated??1,positions:readPositions(p?.positions)};}
 export function avatarSheet(index:number){
+  if(index>=126){const i=index-126;return {url:"/cookie-avatars-v26-sweets.webp",frame:{x:(i%4)/4,y:Math.floor(i/4)/3,width:1/4,height:1/3}};}
+  if(index>=114){const i=index-114;return {url:"/cookie-avatars-v26-forest.webp",frame:{x:(i%4)/4,y:Math.floor(i/4)/3,width:1/4,height:1/3}};}
+  if(index>=102){const i=index-102;return {url:"/cookie-avatars-v26-ocean.webp",frame:{x:(i%4)/4,y:Math.floor(i/4)/3,width:1/4,height:1/3}};}
+  if(index>=90){const i=index-90;return {url:"/cookie-avatars-v26.webp",frame:{x:(i%4)/4,y:Math.floor(i/4)/3,width:1/4,height:1/3}};}
   if(index>=78){const i=index-78;return {url:"/cookie-avatars-v25.webp",frame:{x:(i%4)/4,y:Math.floor(i/4)/3,width:1/4,height:1/3}};}
   if(index>=66){const i=index-66;return {url:"/cookie-avatars-v14.webp",frame:{x:(i%4)/4,y:Math.floor(i/4)/3,width:1/4,height:1/3}};}
   if(index>=60){const i=index-60;return {url:"/cookie-avatars.webp",frame:{x:(i%3)/3,y:Math.floor(i/3)/2,width:1/3,height:1/2}};}
