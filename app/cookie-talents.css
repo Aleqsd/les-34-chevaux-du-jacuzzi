@@ -5,3 +5,7 @@ html:not(.dark) .talent-map{background:radial-gradient(ellipse at 50% 0,#dae7ec,
 @media(max-width:700px){.talent-map{padding:24px 16px}.talent-trunk{display:none}.talent-root{padding-bottom:28px}.talent-paths{grid-template-columns:1fr;gap:30px}.talent-path>header{margin:0 0 18px;padding:20px 0 14px;border-top:1px solid rgba(var(--path-rgb),.22)}.talent-path li{padding-left:30px}.talent-node{text-align:left;padding:16px 14px 16px 65px;min-height:175px}.talent-medallion{position:absolute;left:-23px;top:21px;width:62px;height:62px}.talent-ranks{justify-content:flex-start;margin:0 0 9px}.talent-node>p{margin:0;max-width:none;min-height:0}.talent-controls{justify-content:flex-start}.talent-link{position:absolute;left:36px;top:-36px;height:59px;z-index:1}.talent-path ol{gap:24px}.talent-path h3{font-size:1.16rem}.talent-node h4{font-size:1.03rem}.talent-requirement{margin-bottom:0}}
 @media(prefers-reduced-motion:reduce){.talent-node,.talent-controls button{transition:none}}
 @media(max-width:700px){.talent-controls button{min-width:44px;height:44px}}
+@media(max-width:700px){
+ .talent-controls{display:grid;grid-template-columns:44px minmax(0,1fr) 44px;gap:8px;width:calc(100% + 49px);max-width:240px;margin-left:-49px}
+ .talent-controls span{min-width:0;max-width:none;text-align:center;font-size:.75rem;overflow-wrap:anywhere}
+}

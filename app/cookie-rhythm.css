@@ -17,3 +17,16 @@
 .rhythm-chart-picker>button:focus-visible{outline:2px solid var(--chart-color);outline-offset:3px}
 @media(max-width:1000px){.rhythm-chart-picker{grid-template-columns:repeat(2,minmax(0,1fr))}.rhythm-chart-picker>button{min-height:98px}}
 @media(max-width:480px){.rhythm-chart-picker{grid-template-columns:1fr;gap:8px}.rhythm-chart-picker>button{padding:12px;min-height:80px;flex-wrap:nowrap}.rhythm-chart-picker>button>b{margin-left:0;white-space:nowrap}.rhythm-chart-picker strong{font-size:15px}.rhythm-chart-picker>button>span:nth-child(2){min-width:0}.rhythm-brief{padding:20px}.rhythm-brief h3{font-size:25px}.rhythm-track-label{font-size:11px;letter-spacing:.04em}}
+/* Keep the complete playable arena on screen, including small landscape phones. */
+@media(max-height:550px){
+ .rhythm-dialog[data-phase=playing]{height:calc(100dvh - 16px);max-height:calc(100dvh - 16px);padding:10px!important;gap:5px!important;overflow:hidden;grid-template-rows:auto auto minmax(0,1fr) auto}
+ .rhythm-dialog[data-phase=playing] .rhythm-game-top h2{font-size:16px}
+ .rhythm-dialog[data-phase=playing] .rhythm-game-top p{font-size:11px;margin-top:2px;max-width:none}
+ .rhythm-dialog[data-phase=playing] .rhythm-hud{position:static;gap:10px;padding:0;pointer-events:auto}
+ .rhythm-dialog[data-phase=playing] .rhythm-hud span{font-size:10px;display:flex;align-items:baseline;gap:4px}
+ .rhythm-dialog[data-phase=playing] .rhythm-hud b{font-size:17px}
+ .rhythm-dialog[data-phase=playing] .rhythm-arena{height:100%;min-height:0}
+ .rhythm-dialog[data-phase=playing] .rhythm-arena-help{bottom:4px;font-size:10px}
+ .rhythm-dialog[data-phase=playing] .rhythm-feedback{bottom:12%;font-size:17px}
+ .rhythm-dialog[data-phase=playing] .rhythm-progress{margin:0}
+}

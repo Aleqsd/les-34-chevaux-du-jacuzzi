@@ -528,3 +528,16 @@ body.cookie-fullscreen .cookie-game[data-view=atelier] .cookie-status-feed:not(:
  body.cookie-fullscreen .layout-refresh .building-price{text-align:left}
  body.cookie-fullscreen .layout-refresh .building-price>strong{justify-content:flex-start}
 }
+/* The notice stays transparent to game input except for its close control. */
+.cookie-unlock-toaster .cookie-notice-close{pointer-events:auto!important;min-width:44px;min-height:44px;top:2px;right:2px}
+.cookie-notice-kicker{padding-right:38px}
+.cookie-game .cookie-avatar-gallery article{min-width:0;contain-intrinsic-width:0}
+.cookie-avatar-gallery h3{overflow-wrap:anywhere}
+@media(max-height:650px){
+ .unlock-dialog.club-dialog{overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;padding:28px 24px 24px}
+ .unlock-dialog .unlock-rays,.unlock-dialog .unlock-orbits{display:none}
+ .unlock-dialog .unlock-prize{height:110px}
+ .unlock-dialog .unlock-prize .avatar{width:86px;height:86px}
+ .unlock-dialog h2{font-size:28px!important;margin:10px 0 12px!important}
+ .unlock-dialog [data-slot=dialog-description]{margin-bottom:16px}
+}
